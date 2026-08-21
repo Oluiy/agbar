@@ -1,0 +1,48 @@
+{
+  "name": "buildquick",
+  "version": "0.1.0",
+  "description": "Interactive universal backend scaffolder: pick a stack (ASP.NET Core, Spring Boot, Rust, ...) and get a fully-wired, Clean-Architecture-shaped solution in seconds.",
+  "type": "module",
+  "bin": {
+    "buildquick": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/cli.ts --format esm --target node18 --clean",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run"
+  },
+  "license": "MIT",
+  "author": "Iyanuoluwa Akinboyewa (Oluiy)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Oluiy/aggregator"
+  },
+  "keywords": [
+    "cli",
+    "scaffolding",
+    "clean-architecture",
+    "generator",
+    "spring-boot",
+    "aspnetcore",
+    "rust",
+    "backend"
+  ],
+  "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "commander": "^13.1.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "tsup": "^8.3.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
