@@ -13,6 +13,9 @@ import type { ScaffoldConfig } from "./config.js";
 import { buildRecommendationContext, getRecommendations, type RecommendationTier } from "./recommendations.js";
 import { buildDecisionContext, getDecisions } from "./explain.js";
 import { renderArchitectureDoc } from "./explainRender.js";
+import { renderLevelingUpDoc } from "./conceptsRender.js";
+import { printConceptDetail, printConceptsList } from "./conceptsCommand.js";
+import { printStatus, printUnitDetail, printUnitList, submitChallenge } from "./learn/learnCommand.js";
 import { writeFile } from "./utils/fsWrite.js";
 
 const TIER_LABEL: Record<RecommendationTier, string> = {
@@ -27,15 +30,21 @@ const TIER_COLOR: Record<RecommendationTier, (s: string) => string> = {
   scale: pc.cyan,
 };
 
-function writeArchitectureNotes(outDir: string, config: ScaffoldConfig, adapter: StackAdapter): void {
+function writeTeachingDocs(outDir: string, config: ScaffoldConfig, adapter: StackAdapter): void {
   const ctx = buildDecisionContext(adapter.id, config.addons, config.includeTests, config.isMicroservice);
   const decisions = getDecisions(ctx);
   if (decisions.length === 0) return;
 
   const doc = renderArchitectureDoc(config.projectName, decisions);
   writeFile(path.join(outDir, "ARCHITECTURE.md"), doc);
+
+  const levelingUpDoc = renderLevelingUpDoc(config.projectName);
+  writeFile(path.join(outDir, "LEVELING-UP.md"), levelingUpDoc);
+
   clack.log.message(
-    pc.bold(`Wrote ARCHITECTURE.md - ${decisions.length} callout${decisions.length === 1 ? "" : "s"} explaining why this project is shaped the way it is.`)
+    pc.bold(
+      `Wrote ARCHITECTURE.md (${decisions.length} callout${decisions.length === 1 ? "" : "s"} on why this project is shaped the way it is) and LEVELING-UP.md (reliability concepts this scaffold doesn't cover yet).`
+    )
   );
 }
 
@@ -78,7 +87,7 @@ program
   .option("--services <names>", "Comma-separated service names (implies --microservice)")
   .option("--port <number>", "Base HTTP port (default: 8080)")
   .option("--llm-api", "This project calls an LLM API (OpenAI/Anthropic/Groq/...) - drives the ai-cost-guard recommendation")
-  .option("--no-explain", "Skip generating ARCHITECTURE.md (the why-this-is-shaped-this-way notes)")
+  .option("--no-explain", "Skip generating ARCHITECTURE.md and LEVELING-UP.md (the teaching output)")
   .action(async (projectNameArg: string | undefined, opts: NonInteractiveFlags & { yes?: boolean; explain?: boolean }) => {
     const nonInteractive = Boolean(opts.yes || opts.config);
     try {
@@ -88,7 +97,7 @@ program
 
       const outDir = await generateProject(config, adapter);
       printRecommendations(config, adapter);
-      if (opts.explain !== false) writeArchitectureNotes(outDir, config, adapter);
+      if (opts.explain !== false) writeTeachingDocs(outDir, config, adapter);
 
       const doneMessage = pc.green(`Done. cd into "${config.projectName}" to get started.`);
       if (nonInteractive) {
@@ -108,5 +117,42 @@ program
       process.exitCode = 1;
     }
   });
+
+program
+  .command("concepts")
+  .description("Browse backend engineering concepts (idempotency, caching, rate limiting, ...) - no project needed")
+  .argument("[query]", "Concept name or id to see the full explanation for (omit to list everything)")
+  .action((query?: string) => {
+    if (query) {
+      printConceptDetail(query);
+    } else {
+      printConceptsList();
+    }
+  });
+
+program
+  .command("learn")
+  .description("Interactive lessons for a language (currently: rust) - independent of scaffolding a project")
+  .argument("<language>", "Language to learn, e.g. rust")
+  .argument("[unitId]", "Unit id to open (omit to list all units)")
+  .option("--submit <challengeId>", "Run the automated check for a challenge in this unit")
+  .option("--status", "Show your progress instead of listing/opening units")
+  .action(async (language: string, unitId: string | undefined, opts: { submit?: string; status?: boolean }) => {
+    if (opts.status) {
+      printStatus(language);
+    } else if (opts.submit && unitId) {
+      await submitChallenge(language, unitId, opts.submit);
+    } else if (unitId) {
+      printUnitDetail(language, unitId);
+    } else {
+      printUnitList(language);
+    }
+  });
+
+program.addHelpText(
+  "after",
+  "\nRun 'buildquick concepts' any time - during scaffolding or in the middle of writing your own code - to look up things like caching, rate limiting, or idempotency without leaving the terminal." +
+    "\nRun 'buildquick learn rust' for interactive lessons with real pass/fail checks, independent of scaffolding a project."
+);
 
 program.parseAsync();
