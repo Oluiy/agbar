@@ -1,18 +1,24 @@
 {
   "name": "buildquick",
   "version": "0.1.0",
-  "description": "Interactive universal backend scaffolder: pick a stack (ASP.NET Core, Spring Boot, Rust, ...) and get a fully-wired, Clean-Architecture-shaped solution in seconds.",
+  "description": "Scaffold a backend project, grade an existing one, and practise the engineering concepts behind both - with real pass/fail checks, not quizzes.",
   "type": "module",
   "bin": {
     "buildquick": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "content",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsup src/cli.ts --format esm --target node18 --clean",
     "dev": "tsx src/cli.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm test",
+    "prepublishOnly": "npm run verify && npm run build"
   },
   "license": "MIT",
   "author": "Iyanuoluwa Akinboyewa (Oluiy)",
@@ -27,13 +33,19 @@
     "generator",
     "spring-boot",
     "aspnetcore",
-    "rust",
-    "backend"
+    "backend",
+    "learning",
+    "system-design",
+    "code-quality",
+    "best-practices",
+    "developer-education"
   ],
   "dependencies": {
     "@clack/prompts": "^0.9.1",
     "commander": "^13.1.0",
-    "picocolors": "^1.1.1"
+    "ignore": "^7.0.9",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",
