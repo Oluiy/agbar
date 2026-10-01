@@ -1,0 +1,105 @@
+id: "04-api-and-file-traps"
+chapter_ref: 4
+title: "API and File Traps: Silent Data Loss and Open Doors"
+prerequisites: []
+core: true
+estimated_minutes: 25
+explanation: |
+  **Spreading a built-in object copies nothing.** `{ ...headers }` on a
+  `Headers`, `URLSearchParams` or `FormData` gives `{}` - their data lives in
+  internal slots, not ordinary properties - so an Authorization header quietly
+  vanishes. Convert explicitly: `Object.fromEntries(headers.entries())`.
+
+  **Path traversal.** `path.join("/var/uploads", filename)` with a filename of
+  `../../etc/passwd` is `/etc/passwd`. Never build a path from a name you didn't
+  create: store uploads under a generated id, or at least take
+  `path.basename(name)` and confirm the resolved path is still inside the folder.
+
+  **Write files atomically.** Opening a file for writing empties it at once; a
+  crash mid-write leaves it empty or half-written. Write a temporary file in the
+  same folder, then rename it over the original - a rename is atomic.
+
+  **PUT and DELETE must be idempotent** - *idempotent* means doing it twice has
+  the same effect as doing it once. HTTP says they are, so proxies and
+  client libraries may retry them automatically. Anything that must not happen
+  twice (charging a card, sending an email) belongs behind `POST` with an
+  idempotency key.
+
+  **Compare secrets in constant time.** `token === secret` stops at the first
+  different character, and the time that takes leaks how much matched. Use
+  `crypto.timingSafeEqual` (Node), `hmac.compare_digest` (Python),
+  `CryptographicOperations.FixedTimeEquals` (.NET).
+example_code: |
+  const headers = new Headers({ authorization: "Bearer abc" });
+  const bad = { ...headers };                               // {} - token gone
+  const good = Object.fromEntries(headers.entries());       // { authorization: ... }
+
+  // Bad: the client picks where the file goes
+  const unsafe = path.join(uploadDir, req.file.originalname);
+  // Good: we pick the name
+  const safe = path.join(uploadDir, `${crypto.randomUUID()}.png`);
+challenges:
+  - id: "predict-api"
+    prompt: |
+      Read program.js and write exactly what it prints into answer.txt. Don't run it.
+    starter_code: |
+      const path = require("node:path");
+      const headers = new Headers({ authorization: "Bearer abc" });
+      console.log(JSON.stringify({ ...headers }));
+      console.log(Object.fromEntries(headers.entries()).authorization);
+      console.log(path.join("/var/uploads", "../../etc/passwd"));
+      console.log(path.basename("../../etc/passwd"));
+    check_type: "predict_output"
+    expected_output: |
+      {}
+      Bearer abc
+      /etc/passwd
+      passwd
+    hint: "Spread copies own enumerable properties - Headers has none. join resolves every '..'. basename keeps only the last part."
+  - id: "fix-upload-path"
+    prompt: |
+      uploadPath(dir, filename) decides where an uploaded file is saved. A
+      filename like "../../etc/cron.d/job" escapes the upload folder. Fix it in
+      solution.js: the result must always be a file directly inside `dir`, and
+      a name that is empty after cleaning (like "..") must throw.
+    starter_code: |
+      import path from "node:path";
+
+      export function uploadPath(dir, filename) {
+        return path.join(dir, filename);
+      }
+    check_type: "test_passes"
+    hint: "Take path.basename of the name (after turning backslashes into slashes), refuse '', '.' and '..', then join."
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import path from "node:path";
+      import { uploadPath } from "./solution.js";
+
+      test("a normal name stays in the folder", () => {
+        assert.equal(uploadPath("/var/uploads", "photo.png"), path.join("/var/uploads", "photo.png"));
+      });
+      test("../ can't escape the folder", () => {
+        assert.equal(path.dirname(uploadPath("/var/uploads", "../../etc/cron.d/job")), "/var/uploads");
+      });
+      test("Windows-style ..\\ can't escape either", () => {
+        assert.equal(path.dirname(uploadPath("/var/uploads", "..\\..\\evil.exe")), "/var/uploads");
+      });
+      test("a name that's nothing but dots is refused", () => {
+        assert.throws(() => uploadPath("/var/uploads", ".."));
+      });
+review_questions:
+  - id: "spread-headers"
+    question: "What does { ...headers } give for a fetch Headers object?"
+    answer: "{}"
+    accept: ["an empty object", "empty object", "nothing"]
+    explain: "Its data is internal. Use Object.fromEntries(headers.entries())."
+  - id: "atomic-write"
+    question: "To update a file safely, write a temporary file and then do what to it?"
+    answer: "rename it"
+    accept: ["rename", "rename it over the original", "move it", "atomic rename"]
+    explain: "A rename is atomic: readers see the old file or the new one, never half of it."
+  - id: "put-idempotent"
+    question: "Which HTTP method should an operation that must not happen twice (like charging a card) use: PUT or POST?"
+    answer: "POST"
+    explain: "PUT is defined as idempotent, so proxies may retry it automatically."

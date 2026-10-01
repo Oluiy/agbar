@@ -1,0 +1,100 @@
+id: "01-text-traps"
+chapter_ref: 1
+title: "Text Traps: Strings That Look Equal and Aren't"
+prerequisites: []
+core: true
+estimated_minutes: 20
+explanation: |
+  Text is where "it works on my machine" hides best, because the bugs are
+  **invisible**: two strings print identically and still aren't equal.
+
+  **Unicode normalization.** `é` can be one code point (`é`, the composed
+  form, **NFC**) or `e` plus a combining accent (`é`, decomposed, **NFD**).
+  They look the same and compare unequal. macOS often hands you NFD filenames;
+  browsers send NFC. Normalize at the boundary: `s.normalize("NFC")`.
+
+  **"Length" means three different things.** 👩🏽‍💻 is one visible character,
+  but 4 code points, 7 UTF-16 units (JavaScript's `.length`), and 15 UTF-8 bytes
+  (what a database column limit counts). `slice(0, 3)` can cut it in half and
+  leave broken text. Count bytes for storage limits (`Buffer.byteLength`), and
+  graphemes for display (`Intl.Segmenter`) - a *grapheme* is one character as a
+  person sees it, however many code points it's built from.
+
+  **Invisible characters.** A zero-width space (`​`) makes `"alice"` and
+  `"alice​"` two different usernames - an impersonation hole. `trim()`
+  removes ordinary and non-breaking spaces, but **not** zero-width ones.
+
+  **Locale-aware case.** In Turkish, lowercase `I` is `ı` (no dot).
+  JavaScript's `toLowerCase()` ignores locale and is safe, but
+  `toLocaleLowerCase()`, Java's `toLowerCase()` and C#'s `ToLower()` use the
+  machine's locale. For identifiers, use the invariant forms
+  (`ToLowerInvariant()`, `toLowerCase(Locale.ROOT)`).
+example_code: |
+  "café" === "café";                                     // false
+  "café".normalize("NFC") === "café".normalize("NFC");   // true
+
+  const e = "👩🏽‍💻";
+  e.length;                                         // 7  (UTF-16 units)
+  [...e].length;                                    // 4  (code points)
+  Buffer.byteLength(e);                             // 15 (UTF-8 bytes)
+  [...new Intl.Segmenter().segment(e)].length;      // 1  (what a person sees)
+challenges:
+  - id: "predict-text"
+    prompt: |
+      Read program.js and write exactly what it prints into answer.txt. Don't run it.
+    starter_code: |
+      console.log("café" === "café");
+      console.log("café".normalize("NFC") === "café".normalize("NFC"));
+      console.log("ab".length, "👍".length);
+      console.log(JSON.stringify("alice​".trim()) === JSON.stringify("alice"));
+      console.log("TITLE".toLowerCase(), "TITLE".toLocaleLowerCase("tr"));
+    check_type: "predict_output"
+    expected_output: |
+      false
+      true
+      2 2
+      false
+      title tıtle
+    hint: "One emoji outside the Basic Multilingual Plane is two UTF-16 units. trim() doesn't know about zero-width spaces. Only the locale version is locale-aware."
+  - id: "fix-same-username"
+    prompt: |
+      sameUsername(a, b) decides whether two sign-ups are the same person. It
+      lets "Alice" and "alice​" (zero-width space) register separately, and
+      treats a composed and a decomposed "José" as different. Fix it in
+      solution.js: equal after normalizing (NFC), removing zero-width characters,
+      trimming, and lowercasing.
+    starter_code: |
+      export function sameUsername(a, b) {
+        return a.trim().toLowerCase() === b.trim().toLowerCase();
+      }
+    check_type: "test_passes"
+    hint: "normalize('NFC'), then replace(/[\\u200b-\\u200d\\ufeff]/g, ''), then trim and lowercase - the same pipeline on both sides."
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { sameUsername } from "./solution.js";
+
+      test("zero-width characters don't make a new username", () => {
+        assert.equal(sameUsername("Alice", "alice​"), true);
+        assert.equal(sameUsername("﻿bob", "bob"), true);
+      });
+      test("composed and decomposed forms are the same name", () => {
+        assert.equal(sameUsername("José", "josé"), true);
+      });
+      test("different names are still different", () => {
+        assert.equal(sameUsername("alice", "alicia"), false);
+      });
+review_questions:
+  - id: "nfc"
+    question: "Which Unicode normalization form should you apply to incoming text before storing or comparing it?"
+    answer: "NFC"
+    explain: "Composed form. s.normalize('NFC') makes composed and decomposed é compare equal."
+  - id: "length-three"
+    question: "In JavaScript, what does .length on a string count: characters, bytes, or UTF-16 units?"
+    answer: "UTF-16 units"
+    accept: ["utf-16 code units", "utf16 units", "code units"]
+    explain: "👍.length is 2. Use Buffer.byteLength for storage limits and Intl.Segmenter for what people see."
+  - id: "zero-width-trim"
+    question: "Does String.prototype.trim() remove a zero-width space (\\u200b)? (yes/no)"
+    answer: "no"
+    explain: "Strip zero-width characters explicitly: replace(/[\\u200b-\\u200d\\ufeff]/g, '')."

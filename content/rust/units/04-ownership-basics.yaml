@@ -1,0 +1,91 @@
+id: "04-ownership-basics"
+chapter_ref: 4
+title: "Ownership: Who Owns This Value?"
+prerequisites: ["03-common-concepts"]
+core: true
+estimated_minutes: 30
+explanation: |
+  Every value in Rust has exactly one owner - the variable currently
+  responsible for it - and when that owner goes out of scope, Rust
+  automatically cleans the value up. There's no garbage collector deciding
+  when that happens later; it's determined at compile time, which is how Rust
+  gets memory safety without a runtime cost.
+
+  For a type like `String` (heap-allocated, variable size), assigning it to a
+  second variable doesn't copy the data - it moves ownership. After
+  `let s2 = s1;`, `s1` is no longer valid; the compiler rejects any later use
+  of it. This looks unfamiliar coming from languages where assignment always
+  copies or where multiple references share the same object freely, but it's
+  what prevents two variables from ever trying to free the same memory twice.
+  If you actually want two independent copies, call `.clone()` explicitly -
+  Rust makes the cost of duplicating data visible in the code, rather than
+  hiding it behind an implicit copy.
+
+  Moving ownership every time you want to use a value without keeping it would
+  be exhausting, so Rust also has references: `&s1` borrows the value without
+  taking ownership of it. A function that only needs to read a `String` should
+  take `&String` (or better, `&str`), not `String` - that's why so many
+  functions in real Rust code take borrowed parameters instead of owned ones.
+  Rust's borrow checker enforces one rule at compile time: any number of
+  immutable borrows, or exactly one mutable borrow, never both at once - which
+  is also what rules out data races on shared data without needing a runtime
+  lock.
+example_code: |
+  fn main() {
+      let s1 = String::from("hello");
+      let s2 = s1.clone();
+      println!("{s1}, {s2}");
+  }
+challenges:
+  - id: "fix-move-error"
+    prompt: |
+      This code fails to compile because s1 is moved into s2 on the line
+      `let s2 = s1;`, so the later use of s1 is invalid. Fix it WITHOUT adding
+      a .clone() call - use a reference instead, so s1 keeps ownership and s2
+      just borrows it.
+    starter_code: |
+      fn main() {
+          let s1 = String::from("hi");
+          let s2 = s1;
+          println!("{s1}");
+      }
+    check_type: "compiles_only"
+    hint: "let s2 = &s1; borrows s1 instead of moving it - s1 is still valid afterward."
+  - id: "borrow-dont-take-ownership"
+    prompt: |
+      print_length currently takes ownership of the String it's given, so main
+      can't use `text` again after calling it. Change print_length to borrow
+      instead, so both the print inside the function AND the println
+      afterward work, printing exactly: 5 then hello (on separate lines).
+    starter_code: |
+      fn print_length(s: String) {
+          println!("{}", s.len());
+      }
+
+      fn main() {
+          let text = String::from("hello");
+          print_length(text);
+          println!("{text}");
+      }
+    check_type: "compiles_and_output_matches"
+    expected_output: |
+      5
+      hello
+    hint: "Change the parameter type to &String (or &str) and pass &text instead of text."
+project_tiein:
+  note: "This is the same reason a well-written scaffolded function takes &str instead of String - it borrows the caller's data instead of taking it away."
+review_questions:
+  - id: "move"
+    question: "After `let s2 = s1;` with a String, can you still use s1? (yes/no)"
+    answer: "no"
+    explain: "Ownership moved to s2. Using s1 is a compile error - that's what prevents a double free."
+  - id: "clone"
+    question: "Which method makes an explicit, independent copy of a String?"
+    answer: "clone"
+    accept: [".clone()", "clone()"]
+    explain: "Rust makes copying data visible in the code instead of hiding it."
+  - id: "cleanup"
+    question: "When is a value's memory freed?"
+    answer: "when its owner goes out of scope"
+    accept: ["when the owner goes out of scope", "out of scope", "when it goes out of scope", "end of scope"]
+    explain: "Decided at compile time - no garbage collector."

@@ -1,0 +1,94 @@
+id: "03-edge-cases"
+chapter_ref: 3
+title: "Edge Cases: Where the Happy Path Ends"
+prerequisites: ["02-mutation-and-copies"]
+core: true
+estimated_minutes: 25
+explanation: |
+  AI-written code is usually right on the example it was asked about and wrong
+  at the edges: the first page, the empty list, the number that isn't quite a
+  number. Reading for edges is the habit that catches it.
+
+  **Off by one.** Is a page number or index 0-based or 1-based? If the API
+  documents page 1 as the first page, `page * size` skips a whole page. Check
+  every boundary: the first item, the last item, and one past the end.
+
+  **Numbers aren't exact.** `0.1 + 0.2` is `0.30000000000000004`, so comparing
+  decimal results with `===` fails. Money should be stored in whole cents (or a
+  decimal type), and comparisons should use a tolerance.
+
+  **Defaults that surprise.** `array.sort()` with no comparator sorts as
+  *strings*: `[10, 9, 1].sort()` gives `[1, 10, 9]`. And `+` joins when either
+  side is a string (`"5" + 1` is `"51"`), while `-` always converts to a number
+  (`"5" - 1` is `4`).
+
+  How to read code like this: pick the smallest, largest, empty and first
+  inputs, and trace the code with them in your head before trusting it.
+example_code: |
+  // page is 1-based: page 1 must start at index 0
+  const start = (page - 1) * pageSize;
+
+  [10, 9, 1].sort((a, b) => a - b);     // [1, 9, 10] - numeric comparator
+  Math.abs(0.1 + 0.2 - 0.3) < 1e-9;     // true - compare with a tolerance
+challenges:
+  - id: "predict-js-defaults"
+    prompt: |
+      Read program.js and write exactly what it prints into answer.txt. Don't run it.
+    starter_code: |
+      console.log(0.1 + 0.2 === 0.3);
+      console.log([10, 9, 1].sort().join(","));
+      console.log("5" + 1);
+      console.log("5" - 1);
+    check_type: "predict_output"
+    expected_output: |
+      false
+      1,10,9
+      51
+      4
+    hint: "Floating point isn't exact; sort() without a comparator compares strings; + joins strings, - converts to numbers."
+  - id: "fix-pagination"
+    prompt: |
+      getPage() was written by an AI assistant. The API docs say page numbers
+      start at 1, and users report the first page of results never appears.
+      Fix it in solution.js, keeping the same signature.
+    starter_code: |
+      // Returns one page of items. Pages are numbered from 1.
+      export function getPage(items, page, pageSize) {
+        const start = page * pageSize;
+        return items.slice(start, start + pageSize);
+      }
+    check_type: "test_passes"
+    hint: "Trace page 1 with pageSize 2: which index should it start at, and which does it start at?"
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { getPage } from "./solution.js";
+
+      const items = [1, 2, 3, 4, 5];
+
+      test("page 1 is the first page", () => {
+        assert.deepEqual(getPage(items, 1, 2), [1, 2]);
+      });
+
+      test("the last page can be partial", () => {
+        assert.deepEqual(getPage(items, 3, 2), [5]);
+      });
+
+      test("a page past the end is empty, not an error", () => {
+        assert.deepEqual(getPage(items, 4, 2), []);
+      });
+review_questions:
+  - id: "sort-default"
+    question: "What does [10, 9, 1].sort() return in JavaScript?"
+    answer: "[1, 10, 9]"
+    accept: ["1,10,9", "[1,10,9]", "1, 10, 9"]
+    explain: "With no comparator, sort compares as strings. Pass (a, b) => a - b for numbers."
+  - id: "float"
+    question: "In JavaScript, is 0.1 + 0.2 === 0.3 true or false?"
+    answer: "false"
+    explain: "Binary floating point can't represent 0.1 exactly. Store money in cents; compare with a tolerance."
+  - id: "one-based"
+    question: "If pages are numbered from 1, at which index does page `p` start? (in terms of p and pageSize)"
+    answer: "(p - 1) * pageSize"
+    accept: ["(p-1)*pageSize", "(p - 1)*pageSize", "(p-1) * pageSize", "pagesize * (p - 1)", "pageSize * (p - 1)"]
+    explain: "Page 1 starts at 0. p * pageSize skips a whole page."

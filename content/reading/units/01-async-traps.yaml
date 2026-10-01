@@ -1,0 +1,110 @@
+id: "01-async-traps"
+chapter_ref: 1
+title: "Async Traps: Code That Looks Right and Isn't"
+prerequisites: []
+core: true
+estimated_minutes: 20
+explanation: |
+  AI-written code rarely fails loudly. It compiles, it runs, and it returns the
+  wrong answer - and the bugs cluster in a few places. Asynchronous code is the
+  biggest one, because it *reads* top to bottom but doesn't *run* that way.
+
+  **`forEach` doesn't wait.** `array.forEach(async (x) => { await ... })` starts
+  every callback and returns immediately. It never awaits the promises the
+  callbacks return, so any code after it runs before they finish. Use
+  `for (const x of array) { await ... }` for one at a time, or
+  `await Promise.all(array.map(async (x) => ...))` to run them together.
+
+  **Closures capture variables, not values.** A callback remembers the variable
+  itself. With `var`, a loop has one `i` shared by every iteration, so callbacks
+  that run later all see its final value. `let` creates a fresh binding per
+  iteration.
+
+  **Timers run after the current code.** `setTimeout(fn, 0)` doesn't mean now; it
+  means "after everything currently running, in the order they were queued".
+
+  How to read code like this: for every `async`, ask *who awaits this promise?*
+  If the answer is nobody, that's the bug.
+example_code: |
+  // Looks sequential, isn't: prints "done" first, then 1, 2, 3
+  [1, 2, 3].forEach(async (n) => {
+    await Promise.resolve();
+    console.log(n);
+  });
+  console.log("done");
+
+  // What was meant:
+  for (const n of [1, 2, 3]) {
+    await Promise.resolve();
+    console.log(n);
+  }
+  console.log("done");
+challenges:
+  - id: "predict-closures"
+    prompt: |
+      Read program.js and write exactly what it prints into answer.txt - one line
+      per line. Don't run it; that's the exercise.
+    starter_code: |
+      for (var i = 0; i < 3; i++) {
+        setTimeout(() => console.log("var", i), 0);
+      }
+      for (let j = 0; j < 3; j++) {
+        setTimeout(() => console.log("let", j), 0);
+      }
+    check_type: "predict_output"
+    expected_output: |
+      var 3
+      var 3
+      var 3
+      let 0
+      let 1
+      let 2
+    hint: "When does each callback run, and how many `i` variables exist with var? Timers run in the order they were queued."
+  - id: "fix-foreach-await"
+    prompt: |
+      An AI assistant wrote totalPrice(). It passed a quick manual test with one
+      item, but in production every total comes back as 0. Find the bug and fix
+      it in solution.js. Keep the same function signature.
+    starter_code: |
+      // Returns the total price of every id, looking each up with getPrice(id).
+      export async function totalPrice(ids, getPrice) {
+        let total = 0;
+        ids.forEach(async (id) => {
+          total += await getPrice(id);
+        });
+        return total;
+      }
+    check_type: "test_passes"
+    hint: "Who awaits the promises the forEach callbacks return? Nobody - so `return total` runs first."
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { totalPrice } from "./solution.js";
+
+      const prices = { a: 10, b: 20, c: 30 };
+      const getPrice = async (id) => {
+        await new Promise((r) => setTimeout(r, 5));
+        return prices[id];
+      };
+
+      test("totals every item, not 0", async () => {
+        assert.equal(await totalPrice(["a", "b", "c"], getPrice), 60);
+      });
+
+      test("an empty list totals 0", async () => {
+        assert.equal(await totalPrice([], getPrice), 0);
+      });
+review_questions:
+  - id: "foreach"
+    question: "Does array.forEach wait for the promises its async callbacks return? (yes/no)"
+    answer: "no"
+    explain: "It returns immediately. Use for...of with await, or await Promise.all(array.map(...))."
+  - id: "who-awaits"
+    question: "The question to ask of every async call when reading code: who ___ this promise?"
+    answer: "awaits"
+    accept: ["awaits it", "await"]
+    explain: "A promise nobody awaits is work that finishes whenever it finishes - usually after you needed the result."
+  - id: "var-let"
+    question: "Which keyword gives each loop iteration its own variable binding - var or let?"
+    answer: "let"
+    explain: "With var there is one shared variable, so callbacks that run later all see its final value."

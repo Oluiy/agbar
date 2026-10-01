@@ -1,0 +1,54 @@
+id: "01-getting-started"
+chapter_ref: 1
+title: "Getting Started: Installing Rust and Running Your First Program"
+prerequisites: []
+core: false
+estimated_minutes: 15
+explanation: |
+  Rust ships as a toolchain manager called rustup, not a single installer. Once
+  installed, two commands do almost everything day to day: `cargo new <name>`
+  scaffolds a new project (a `Cargo.toml` manifest plus a `src/main.rs` file
+  with a starter `main` function), and `cargo run` compiles and immediately
+  executes it in one step.
+
+  `cargo build` compiles without running - useful when you only want the
+  binary, not to execute it yet. `cargo check` is faster still: it verifies
+  the code compiles without producing a binary at all, which is why it's the
+  command most Rust developers run constantly while writing code, saving the
+  slower full build for when they actually need to run something.
+
+  Every Rust program starts execution in a function named `main`. There's no
+  separate build script or project file format to learn beyond `Cargo.toml` -
+  it lists your project's name, version, and dependencies, and Cargo (Rust's
+  package manager and build tool) handles the rest.
+example_code: |
+  fn main() {
+      println!("Hello, Rust!");
+  }
+challenges:
+  - id: "fix-the-macro"
+    prompt: |
+      This won't compile - `println` is missing the `!` that marks it as a
+      macro, not a function. Fix it so the program prints exactly: Hello, Rust!
+    starter_code: |
+      fn main() {
+          println("Hello, Rust!");
+      }
+    check_type: "compiles_and_output_matches"
+    expected_output: "Hello, Rust!"
+    hint: "Rust's built-in printing tool is a macro, not a function - macros are called with a trailing !."
+review_questions:
+  - id: "fast-check"
+    question: "Which cargo command verifies code compiles without producing a binary?"
+    answer: "cargo check"
+    accept: ["check"]
+    explain: "It's the fastest feedback loop, so it's the one Rust developers run constantly."
+  - id: "manifest"
+    question: "Which file lists a Rust project's name, version and dependencies?"
+    answer: "Cargo.toml"
+    explain: "Cargo reads it; there's no other project format to learn."
+  - id: "macro"
+    question: "What character marks a macro call, as in println?"
+    answer: "!"
+    accept: ["exclamation mark", "bang", "an exclamation mark"]
+    explain: "println!(...) is a macro, not a function."

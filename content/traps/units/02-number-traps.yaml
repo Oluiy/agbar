@@ -1,0 +1,98 @@
+id: "02-number-traps"
+chapter_ref: 2
+title: "Number Traps: Money, Big IDs, NaN and Rounding"
+prerequisites: []
+core: true
+estimated_minutes: 20
+explanation: |
+  **Floats can't hold most decimals exactly.** `0.1 + 0.2` is
+  `0.30000000000000004`, and `(1.005).toFixed(2)` is `"1.00"`. For money, store
+  **whole cents as integers** (`1050` for $10.50) or use a decimal type
+  (`decimal` in C#, `BigDecimal` in Java, `Decimal` in Python).
+
+  **Big integer IDs break in JavaScript.** JSON numbers become doubles, which
+  are exact only up to `Number.MAX_SAFE_INTEGER` (2^53 - 1). A 64-bit ID like
+  `182947192837491823` parses as `182947192837491800` - a *different* record.
+  APIs should send 64-bit IDs as **strings**.
+
+  **NaN poisons comparisons.** Dividing by zero gives `Infinity`, not an error;
+  invalid math gives `NaN`, and `NaN > 0` and `NaN <= 0` are *both* false - so
+  both branches of an if/else-if can be skipped. `NaN === NaN` is false too.
+  Guard with `Number.isFinite(x)`.
+
+  **Rounding isn't one rule.** JavaScript's `Math.round` rounds halves up
+  toward +infinity: `2.5 -> 3` but `-2.5 -> -2`. Python's `round` and C#'s
+  `Math.Round` round halves to *even*: `2.5 -> 2`. If a spec says "round half
+  up", say so explicitly (`MidpointRounding.AwayFromZero` in C#).
+
+  **`||` treats 0 as missing.** `stock || 10` turns a real stock of 0 into 10.
+  `stock ?? 10` only replaces `null` and `undefined`.
+example_code: |
+  0.1 + 0.2;                                 // 0.30000000000000004
+  const totalCents = 1010 + 20;              // good: integers, exact
+  JSON.parse('{"id":182947192837491823}').id;    // 182947192837491800 - wrong record
+  JSON.parse('{"id":"182947192837491823"}').id;  // good: a string survives
+  const stock = 0;
+  stock || 10;                               // bad: 10
+  stock ?? 10;                               // good: 0
+challenges:
+  - id: "predict-numbers"
+    prompt: |
+      Read program.js and write exactly what it prints into answer.txt. Don't run it.
+    starter_code: |
+      console.log(0.1 + 0.2 === 0.3);
+      console.log((1.005).toFixed(2));
+      console.log(Math.round(2.5), Math.round(-2.5));
+      console.log(JSON.parse('{"id":182947192837491823}').id === 182947192837491823);
+      console.log(NaN > 0, NaN <= 0);
+      console.log(0 || 10, 0 ?? 10);
+    check_type: "predict_output"
+    expected_output: |
+      false
+      1.00
+      3 -2
+      true
+      false false
+      10 0
+    hint: "Line 4 is a trick: the literal on the right loses precision the same way the parsed one does, so they're equal - and both wrong."
+  - id: "fix-money-sum"
+    prompt: |
+      addMoney(amounts) takes prices as strings like "19.99" and returns the
+      total as a string with two decimals. It returns "0.30000000000000004" for
+      ["0.10", "0.20"]. Fix it in solution.js so it adds in whole cents.
+    starter_code: |
+      export function addMoney(amounts) {
+        const total = amounts.reduce((sum, a) => sum + parseFloat(a), 0);
+        return String(total);
+      }
+    check_type: "test_passes"
+    hint: "Turn each string into integer cents (split on '.' - don't multiply a float by 100), add integers, then format cents back as dollars.cents."
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { addMoney } from "./solution.js";
+
+      test("adds exactly, with two decimals", () => {
+        assert.equal(addMoney(["0.10", "0.20"]), "0.30");
+        assert.equal(addMoney(["1.10", "2.20", "3.30"]), "6.60");
+        assert.equal(addMoney(["19.99", "0.01"]), "20.00");
+      });
+      test("whole amounts and a single item", () => {
+        assert.equal(addMoney(["5", "2.5"]), "7.50");
+        assert.equal(addMoney(["0.05"]), "0.05");
+      });
+review_questions:
+  - id: "money"
+    question: "What should you store money as, instead of a floating-point number? (in the smallest unit)"
+    answer: "integer cents"
+    accept: ["cents", "integers", "whole cents", "integer", "minor units"]
+    explain: "1050 for $10.50 - integers add exactly. Or use a decimal type."
+  - id: "big-id"
+    question: "How should an API send a 64-bit integer ID so JavaScript doesn't corrupt it?"
+    answer: "as a string"
+    accept: ["string", "a string", "as strings"]
+    explain: "Doubles are exact only up to 2^53 - 1."
+  - id: "nullish"
+    question: "Which operator gives a default only for null/undefined, keeping a real 0: || or ?? ?"
+    answer: "??"
+    explain: "stock || 10 turns 0 into 10; stock ?? 10 keeps 0."

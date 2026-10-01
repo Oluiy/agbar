@@ -1,0 +1,137 @@
+id: "03-lru-cache"
+chapter_ref: 3
+title: "LRU Cache: Deciding What to Throw Away"
+prerequisites: ["01-token-bucket"]
+core: true
+estimated_minutes: 25
+explanation: |
+  `buildquick concepts caching` says to put frequently-read data in memory. That
+  raises the question every cache eventually has to answer: memory is finite, so
+  when it's full, what gets evicted?
+
+  Least Recently Used is the default answer because it approximates something
+  useful - data used recently is likely to be used again (temporal locality).
+  When the cache is full, evict whatever hasn't been touched for the longest.
+
+  The interesting part is that **a read is a write**. Calling `get` changes the
+  eviction order, because the item you just read is now the most recently used.
+  That surprises people, and it's why a naive LRU built on a plain array with an
+  index-of-then-splice is O(n) per operation - fine for 100 entries, a problem at
+  100,000.
+
+  The standard production shape is a hash map for O(1) lookup plus a doubly
+  linked list for O(1) reordering. In JavaScript there's a shortcut worth
+  knowing: **`Map` preserves insertion order**, and deleting then re-setting a
+  key moves it to the end. That gives you O(1) LRU in a few lines, and
+  `map.keys().next().value` is the oldest entry. Knowing your language's data
+  structures well enough to avoid implementing a linked list is a real skill.
+
+  LRU isn't always right. A single large scan touching every row will evict your
+  entire hot set - which is why real systems reach for LFU, ARC, or segmented
+  variants. Knowing the tradeoff matters more than knowing the implementation.
+example_code: |
+  // Map remembers insertion order, and re-setting a key moves it to the end.
+  const m = new Map();
+  m.set("a", 1);
+  m.set("b", 2);
+  m.delete("a");
+  m.set("a", 1);
+  console.log([...m.keys()]); // ["b", "a"] - "a" is now newest
+  console.log(m.keys().next().value); // "b" - the oldest
+challenges:
+  - id: "implement-lru"
+    prompt: |
+      Implement an LRUCache that evicts the least recently used entry.
+
+      - `new LRUCache(capacity)`.
+      - `get(key)` returns the value, or `undefined` if absent. A hit counts as
+        a use and makes that key the most recently used.
+      - `put(key, value)` inserts or updates, and also counts as a use.
+      - When inserting beyond `capacity`, evict the least recently used key.
+      - `size` reports the current number of entries.
+    starter_code: |
+      export class LRUCache {
+        constructor(capacity) {
+          this.capacity = capacity;
+          this.map = new Map();
+        }
+
+        get size() {
+          return this.map.size;
+        }
+
+        get(key) {
+          // A hit must also mark this key as most recently used.
+          return undefined;
+        }
+
+        put(key, value) {
+          // Insert or update, then evict the oldest if over capacity.
+        }
+      }
+    check_type: "test_passes"
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { LRUCache } from "./solution.js";
+
+      test("stores and retrieves values", () => {
+        const c = new LRUCache(2);
+        c.put("a", 1);
+        assert.equal(c.get("a"), 1);
+        assert.equal(c.get("missing"), undefined);
+      });
+
+      test("evicts the least recently used key when full", () => {
+        const c = new LRUCache(2);
+        c.put("a", 1);
+        c.put("b", 2);
+        c.put("c", 3);
+        assert.equal(c.get("a"), undefined, "'a' was oldest and should be gone");
+        assert.equal(c.get("b"), 2);
+        assert.equal(c.get("c"), 3);
+      });
+
+      test("a read counts as a use and protects the key from eviction", () => {
+        const c = new LRUCache(2);
+        c.put("a", 1);
+        c.put("b", 2);
+        c.get("a");          // "a" is now newest, so "b" is oldest
+        c.put("c", 3);
+        assert.equal(c.get("a"), 1, "'a' was read recently and must survive");
+        assert.equal(c.get("b"), undefined, "'b' was least recently used");
+      });
+
+      test("updating an existing key refreshes it without growing the cache", () => {
+        const c = new LRUCache(2);
+        c.put("a", 1);
+        c.put("b", 2);
+        c.put("a", 99);
+        assert.equal(c.size, 2, "updating must not add an entry");
+        c.put("c", 3);
+        assert.equal(c.get("a"), 99, "'a' was just written, so 'b' should have been evicted");
+        assert.equal(c.get("b"), undefined);
+      });
+
+      test("never exceeds capacity", () => {
+        const c = new LRUCache(3);
+        for (let i = 0; i < 100; i++) c.put(`k${i}`, i);
+        assert.equal(c.size, 3);
+      });
+    hint: "In get: if the key exists, read the value, map.delete(key), map.set(key, value), return it. In put: delete first if present, set, then if map.size > capacity delete map.keys().next().value."
+project_tiein:
+  note: "Production systems often put a small in-process LRU in front of a shared Redis cache, so the hottest keys never leave the app server at all."
+review_questions:
+  - id: "read-is-write"
+    question: "In an LRU cache, does get() change the eviction order? (yes/no)"
+    answer: "yes"
+    explain: "A read makes that item the most recently used - a read is a write to the order."
+  - id: "evicts"
+    question: "When an LRU cache is full, which entry is evicted?"
+    answer: "least recently used"
+    accept: ["the least recently used", "the least recently used one", "lru", "oldest used"]
+    explain: "Whatever hasn't been touched for longest - temporal locality says it's least likely to be needed again."
+  - id: "js-map"
+    question: "Which built-in JavaScript collection preserves insertion order, making an O(1) LRU easy?"
+    answer: "Map"
+    explain: "Delete then re-set a key to move it to the end; the first key is the least recently used."

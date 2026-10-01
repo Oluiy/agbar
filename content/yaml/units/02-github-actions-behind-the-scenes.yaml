@@ -1,0 +1,159 @@
+id: "02-github-actions-behind-the-scenes"
+chapter_ref: 2
+title: "GitHub Actions: What Happens When You Push"
+prerequisites: ["01-yaml-that-means-what-you-think"]
+core: true
+estimated_minutes: 30
+explanation: |
+  A workflow file is not a script that runs top to bottom. It's a description
+  that GitHub reads and acts on. Here is what really happens when you push:
+
+  1. **An event fires** - push, pull_request, schedule, a manual click.
+     GitHub reads every file in `.github/workflows/` *at that commit* and keeps
+     the ones whose `on:` matches the event. No match, nothing runs.
+
+  2. **Each job gets a brand-new machine** (a "runner"). `runs-on:
+     ubuntu-latest` picks the image. It starts empty - your code is not on it,
+     which is why almost every job begins with `actions/checkout`. When the job
+     ends the machine is thrown away: nothing carries over to the next job or
+     the next run unless you pass it on (artifacts, caches).
+
+  3. **Jobs run in parallel** by default. `needs: test` makes one wait for
+     another, and skips it if that one fails. `jobs` is a dependency graph,
+     not a list.
+
+  4. **Steps run in order, on the same machine**, so files written by one step
+     are there for the next. But every `run:` is a *new shell*: a `cd` or an
+     `export` in one step is gone in the next. `uses: owner/repo@v4` runs
+     someone's published action instead of a shell command; `with:` passes its
+     inputs.
+
+  5. **A command that exits non-zero fails its step**, which fails the job and
+     skips the steps after it. That's how `npm test` failing turns your PR red.
+
+  6. **`${{ ... }}` is evaluated by GitHub before the step runs** - the shell
+     never sees it. That's how `${{ secrets.DEPLOY_TOKEN }}` becomes a real
+     token, masked as *** in the logs. Strings inside `${{ }}` use single quotes;
+     double quotes are a syntax error there.
+
+  The skeleton, which every workflow shares:
+
+    on: ...                  # WHEN  (events)
+    jobs:
+      <job-id>:              # WHAT  (one machine each)
+        runs-on: ...         # WHERE
+        steps: [...]         # HOW   (in order)
+example_code: |
+  # .github/workflows/ci.yml
+  name: CI
+  on:
+    push:
+      branches: [main]        # only pushes to main...
+    pull_request:             # ...and every PR (empty value = defaults)
+  jobs:
+    test:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4          # the machine starts empty
+        - uses: actions/setup-node@v4
+          with:
+            node-version: "20"
+        - run: npm ci                         # new shell
+        - run: npm test                       # another new shell
+challenges:
+  - id: "first-ci-workflow"
+    prompt: |
+      Finish this workflow so it runs on pushes to `main` and on every pull
+      request. The `test` job should run on ubuntu-latest, check out the code,
+      install Node 20 with actions/setup-node, then run `npm ci` and `npm test`.
+      (In a real repo this file lives at .github/workflows/ci.yml.)
+    starter_code: |
+      name: CI
+
+      # TODO 1: pushes to main, and every pull request
+      on:
+        push:
+
+      jobs:
+        test:
+          # TODO 2: which machine?
+          steps:
+            # TODO 3: get the code, set up Node 20, install, test
+            - run: echo "replace me"
+    check_type: "yaml_assertions"
+    hint: "Compare against the skeleton in the explanation: on -> push.branches + pull_request; runs-on; then four steps."
+    assertions:
+      - path: "on.push.branches"
+        equals: ["main"]
+        message: "Pushes should be limited to the main branch: on.push.branches: [main]."
+      - path: "on.pull_request"
+        exists: true
+        message: "Add pull_request under on: so every PR is tested before it merges."
+      - path: "jobs.test.runs-on"
+        equals: "ubuntu-latest"
+        message: "The job needs a machine: runs-on: ubuntu-latest."
+      - path: "jobs.test.steps"
+        has_item: { uses: '^actions/checkout@v\d+$' }
+        message: "The runner starts empty - check out the code first with uses: actions/checkout@v4."
+      - path: "jobs.test.steps"
+        has_item: { uses: '^actions/setup-node@v\d+$', with.node-version: '^20' }
+        message: "Set up Node with uses: actions/setup-node@v4 and with: node-version: \"20\"."
+      - path: "jobs.test.steps"
+        has_item: { run: 'npm ci' }
+        message: "Install dependencies with a run: npm ci step."
+      - path: "jobs.test.steps"
+        has_item: { run: 'npm test' }
+        message: "Run the tests with a run: npm test step - a failing test exits non-zero and fails the job."
+  - id: "deploy-after-tests"
+    prompt: |
+      Add a `deploy` job that runs only after `test` passes and only for the
+      main branch (a PR must never deploy). It runs on ubuntu-latest and has one
+      step, `run: ./deploy.sh`, which needs the DEPLOY_TOKEN secret as an
+      environment variable - on that step only, not the whole job, so no other
+      step can read it.
+    starter_code: |
+      name: CI
+      on:
+        push:
+          branches: [main]
+        pull_request:
+      jobs:
+        test:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v4
+            - run: npm ci && npm test
+        # TODO: deploy job
+    check_type: "yaml_assertions"
+    hint: "needs: test, if: github.ref == 'refs/heads/main', and env: under the step with DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}."
+    assertions:
+      - path: "jobs.test"
+        exists: true
+        message: "Keep the test job - deploy depends on it."
+      - path: "jobs.deploy.needs"
+        matches: '^test$'
+        message: "Without needs: test, deploy starts at the same time as test - jobs run in parallel - and ships untested code."
+      - path: "jobs.deploy.if"
+        matches: "github\\.ref\\s*==\\s*'refs/heads/main'"
+        message: "Guard the job with if: github.ref == 'refs/heads/main' - single quotes inside expressions. Otherwise every PR deploys."
+      - path: "jobs.deploy.runs-on"
+        exists: true
+        message: "Every job needs its own runs-on - jobs don't share machines."
+      - path: "jobs.deploy.steps"
+        has_item: { run: 'deploy\.sh', env.DEPLOY_TOKEN: '^\$\{\{\s*secrets\.DEPLOY_TOKEN\s*\}\}$' }
+        message: "The ./deploy.sh step should get env: DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }} - on the step itself (least privilege)."
+review_questions:
+  - id: "parallel"
+    question: "Do jobs in a workflow run in parallel or in sequence by default?"
+    answer: "parallel"
+    accept: ["in parallel"]
+    explain: "`needs:` is what makes one wait for another."
+  - id: "new-shell"
+    question: "Does a `cd` in one run: step still apply in the next run: step? (yes/no)"
+    answer: "no"
+    explain: "Every run: is a new shell. Files persist between steps; shell state doesn't."
+  - id: "checkout"
+    question: "Why does almost every job start with actions/checkout?"
+    answer: "the runner starts empty"
+    accept: ["the machine starts empty", "the code isn't there", "the runner is empty", "to get the code"]
+    explain: "Each job gets a brand-new machine with none of your code on it."

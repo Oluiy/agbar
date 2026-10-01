@@ -1,0 +1,127 @@
+id: "01-extract-the-domain"
+chapter_ref: 1
+title: "Extract the Domain: Rules That Don't Know HTTP Exists"
+prerequisites: []
+core: true
+estimated_minutes: 25
+explanation: |
+  Here's the most common shape in a codebase written quickly - or generated
+  quickly. One handler parses the request, applies the business rules, hits the
+  database, and formats the response. It works. It's also the version you can't
+  change safely six months later.
+
+  The cost isn't aesthetic. Pricing rules buried in a route handler can only be
+  exercised by constructing a fake HTTP request and a fake database. So they
+  usually aren't tested at all, which means nobody can change them with
+  confidence, which means the next person asks an AI to rewrite the whole handler
+  rather than touching the rule they actually came to change.
+
+  Pull the rules out into a plain function that takes data and returns data. No
+  request, no response, no database. Now it tests in a millisecond, it's readable
+  without holding HTTP in your head, and a queue consumer or a CLI can reuse it.
+  The handler shrinks to what it should have been: parse input, call the rule,
+  write the result, return a response.
+
+  The giveaway that you've done it properly is that the extracted function
+  imports nothing from your web framework.
+example_code: |
+  // Before: everything in one place.
+  async function handler(req, res, db) {
+    const items = req.body.items;
+    let total = 0;
+    for (const i of items) total += i.price * i.qty;
+    if (total > 100) total = total * 0.9;
+    await db.save(total);
+    res.json({ total });
+  }
+
+  // After: the rule is just a function.
+  function calculateTotal(items) { /* ... */ }
+challenges:
+  - id: "extract-pure-function"
+    prompt: |
+      Split the pricing rules out of the handler.
+
+      Export TWO things:
+
+      - `calculateOrderTotal(items, discountCode)` - a pure function. Takes an
+        array of `{ price, qty }` and a discount code (or null), returns the
+        number. It must not touch req, res, or the database.
+      - `handleCheckout(req, res, db)` - unchanged behaviour, but it now calls
+        `calculateOrderTotal` instead of doing the arithmetic itself.
+
+      Rules to preserve exactly: subtotal is the sum of `price * qty`; code
+      "SAVE10" takes 10% off; orders over 100 (after any discount) get free
+      shipping, otherwise add 5. Round the final figure to 2 decimals.
+    starter_code: |
+      export async function handleCheckout(req, res, db) {
+        const items = req.body.items;
+        let total = 0;
+        for (const item of items) {
+          total += item.price * item.qty;
+        }
+        if (req.body.discountCode === "SAVE10") {
+          total = total * 0.9;
+        }
+        if (total <= 100) {
+          total = total + 5;
+        }
+        total = Math.round(total * 100) / 100;
+        await db.saveOrder(total);
+        res.json({ total });
+      }
+
+      // Export calculateOrderTotal(items, discountCode) as a pure function,
+      // and make handleCheckout use it.
+    check_type: "test_passes"
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { calculateOrderTotal, handleCheckout } from "./solution.js";
+
+      test("the rule is callable with no request, response, or database", () => {
+        assert.equal(typeof calculateOrderTotal, "function");
+        assert.equal(calculateOrderTotal([{ price: 10, qty: 2 }], null), 25, "20 subtotal, under 100, +5 shipping");
+      });
+
+      test("applies the discount code", () => {
+        assert.equal(calculateOrderTotal([{ price: 100, qty: 2 }], "SAVE10"), 180, "200 less 10% is 180, over 100 so no shipping");
+      });
+
+      test("free shipping threshold is applied after the discount", () => {
+        // 110 less 10% = 99, which is under the threshold, so shipping applies.
+        assert.equal(calculateOrderTotal([{ price: 110, qty: 1 }], "SAVE10"), 104);
+      });
+
+      test("rounds to 2 decimals", () => {
+        assert.equal(calculateOrderTotal([{ price: 10.333, qty: 3 }], null), 36);
+      });
+
+      test("handles an empty order", () => {
+        assert.equal(calculateOrderTotal([], null), 5);
+      });
+
+      test("the handler still works and delegates to the rule", async () => {
+        let saved = null;
+        let sent = null;
+        const req = { body: { items: [{ price: 60, qty: 1 }], discountCode: null } };
+        const res = { json: (b) => (sent = b) };
+        const db = { saveOrder: async (t) => (saved = t) };
+
+        await handleCheckout(req, res, db);
+        assert.equal(sent.total, 65);
+        assert.equal(saved, 65);
+      });
+    hint: "Move the loop and the discount/shipping logic into calculateOrderTotal(items, discountCode) and return the number. handleCheckout then reads req.body, calls it, saves, and responds."
+project_tiein:
+  note: "This is the concrete version of what ARCHITECTURE.md means when it says the domain layer shouldn't depend on the API layer."
+review_questions:
+  - id: "shape"
+    question: "Extracted business rules should be a plain function that takes data and returns ___?"
+    answer: "data"
+    explain: "No request, no response, no database - which is why it tests in a millisecond."
+  - id: "handler-job"
+    question: "After extraction, the handler does four things: parse input, call the rule, write the result, and ___?"
+    answer: "return a response"
+    accept: ["return the response", "respond", "send a response"]
+    explain: "The handler becomes thin transport glue; the rules live where they can be tested and reused."

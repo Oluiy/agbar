@@ -1,0 +1,110 @@
+id: "03-time-traps"
+chapter_ref: 3
+title: "Time Traps: Days That Aren't 24 Hours"
+prerequisites: []
+core: true
+estimated_minutes: 20
+explanation: |
+  **A day is not always 24 hours.** Where daylight saving time applies, one day
+  a year has 23 hours and one has 25. "Tomorrow at the same time" computed as
+  `+ 24 * 3600 * 1000` lands an hour off on those days - a daily job runs at
+  01:00 instead of 00:00, or twice. Add *calendar days* in the right timezone
+  (`date.setDate(date.getDate() + 1)`), and store server timestamps in **UTC**.
+
+  **Adding a year to February 29.** In .NET, `new DateTime(2025, 2, 29)`
+  throws. In JavaScript, `setFullYear` silently rolls it over to **March 1** -
+  no error at all. Use calendar methods that clamp (`AddYears(1)` in .NET), and
+  test your leap-day code on a real Feb 29.
+
+  **`YYYY` is not `yyyy`.** In Java and many formatting libraries, `yyyy` is the
+  calendar year and `YYYY` is the *week-based* year. 2024-12-30 (a Monday) is in
+  week 1 of 2025, so `YYYY` prints 2025 for it. Year-end invoices jump a year.
+
+  **Measure durations with a monotonic clock** - one that only ever moves
+  forward, whatever happens to the time of day. The wall clock (`Date.now()`,
+  `time.time()`) can jump backwards when NTP corrects it, making `end - start`
+  negative. Use `performance.now()`, `time.monotonic()`, `System.nanoTime()`,
+  or .NET's `Stopwatch`.
+
+  **JavaScript months start at 0.** `new Date(2026, 1, 1)` is February 1st.
+example_code: |
+  // Bad: 24 hours after local midnight on a DST day is 01:00 the next day
+  const bad = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  // Good: the next calendar day, at the same local time
+  const good = new Date(start);
+  good.setDate(good.getDate() + 1);
+
+  // Bad for durations: the wall clock can jump
+  const t0 = Date.now();
+  // Good: monotonic
+  const t1 = performance.now();
+challenges:
+  - id: "predict-time"
+    prompt: |
+      Read program.js and write exactly what it prints into answer.txt. Don't
+      run it. It sets its own timezone to New York, where clocks jump from
+      02:00 to 03:00 on 2026-03-08.
+    starter_code: |
+      process.env.TZ = "America/New_York";
+      const midnight = new Date(2026, 2, 8, 0, 0);
+      const plus24h = new Date(midnight.getTime() + 24 * 60 * 60 * 1000);
+      console.log(plus24h.getDate(), plus24h.getHours());
+      const leap = new Date(Date.UTC(2024, 1, 29));
+      leap.setUTCFullYear(2025);
+      console.log(leap.toISOString().slice(0, 10));
+      console.log(new Date(2026, 1, 1).getMonth());
+    check_type: "predict_output"
+    expected_output: |
+      9 1
+      2025-03-01
+      1
+    hint: "March 8th only has 23 hours in New York. JavaScript doesn't throw on Feb 29 2025 - it rolls over. Months are 0-based."
+  - id: "fix-next-day"
+    prompt: |
+      nextDaySameTime(date) should return the same local time on the next
+      calendar day. It adds 24 hours, so across a daylight-saving change the
+      result is an hour off. Fix it in solution.js.
+    starter_code: |
+      export function nextDaySameTime(date) {
+        return new Date(date.getTime() + 24 * 60 * 60 * 1000);
+      }
+    check_type: "test_passes"
+    hint: "Copy the date, then move the calendar day with setDate(getDate() + 1) - the date API handles the short day for you."
+    hidden_tests: |
+      process.env.TZ = "America/New_York";
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { nextDaySameTime } from "./solution.js";
+
+      test("across spring-forward, still midnight the next day", () => {
+        const next = nextDaySameTime(new Date(2026, 2, 8, 0, 0));
+        assert.equal(next.getDate(), 9);
+        assert.equal(next.getHours(), 0);
+      });
+      test("across fall-back, still 09:30 the next day", () => {
+        const next = nextDaySameTime(new Date(2026, 10, 1, 9, 30));
+        assert.equal(next.getDate(), 2);
+        assert.equal(next.getHours(), 9);
+        assert.equal(next.getMinutes(), 30);
+      });
+      test("doesn't change the date it was given", () => {
+        const d = new Date(2026, 5, 1, 12, 0);
+        nextDaySameTime(d);
+        assert.equal(d.getDate(), 1);
+      });
+review_questions:
+  - id: "dst-hours"
+    question: "On a daylight-saving 'spring forward' day, how many hours does the day have?"
+    answer: "23"
+    accept: ["23 hours"]
+    explain: "And 25 on 'fall back'. Add calendar days, not 24 hours."
+  - id: "monotonic"
+    question: "Which kind of clock should you use to measure how long something took: wall clock or monotonic?"
+    answer: "monotonic"
+    accept: ["a monotonic clock", "monotonic clock"]
+    explain: "The wall clock can jump backwards when NTP adjusts it."
+  - id: "js-month"
+    question: "In JavaScript's Date, what number is February?"
+    answer: "1"
+    accept: ["one"]
+    explain: "Months are 0-based: January is 0."

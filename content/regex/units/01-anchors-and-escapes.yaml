@@ -1,0 +1,84 @@
+id: "01-anchors-and-escapes"
+chapter_ref: 1
+title: "Regex: Anchors and Escapes - Why Your Validation Lets Junk Through"
+prerequisites: []
+core: true
+estimated_minutes: 20
+explanation: |
+  A regular expression is a pattern searched for inside text. The first thing
+  people overlook is that word: **inside**. Without anchors, a regex matches
+  anywhere in the string - so `\d{5}` "validates" a zip code, and also accepts
+  `123456`, `ZIP 12345`, and `12345-6789`, because each contains five digits.
+
+  **Anchors pin the match to a position.** `^` means "start of the text", `$`
+  means "end of the text". `^\d{5}$` means *exactly* five digits, nothing
+  before, nothing after. Any regex used to validate a whole value needs both.
+
+  **`.` means any character**, not a dot. `.csv` matches `report.csv` - and
+  `reportcsv`, because `t` is "any character". For a literal dot, escape it:
+  `\.csv`. The characters with special meaning - `. * + ? ^ $ ( ) [ ] { } | \` -
+  all need a backslash to mean themselves.
+
+  The building blocks:
+
+    [abc]   one of a, b, c           [^abc]  anything except those
+    \d      a digit                  \w      letter, digit or _
+    \s      whitespace               .       any character (except newline)
+    ?       0 or 1                   *       0 or more
+    +       1 or more                {3} {2,5}  exactly 3 / between 2 and 5
+
+  How to test a regex properly: check it against things it must **reject**,
+  not just things it should accept. A pattern that matches every good input is
+  easy; one that also refuses every bad input is the actual job.
+  Try any pattern live: `buildquick regex '^\d{5}$' 12345 123456`
+example_code: |
+  // Bad: matches anywhere - "123456" and "ZIP 12345" both pass
+  /\d{5}/.test("123456");        // true
+  // Good: anchored - exactly five digits, nothing else
+  /^\d{5}$/.test("123456");      // false
+  /^\d{5}$/.test("12345");       // true
+
+  // Bad: . is any character
+  /.csv$/.test("reportcsv");     // true
+  // Good: escaped, a real dot
+  /\.csv$/.test("reportcsv");    // false
+challenges:
+  - id: "zip-code"
+    prompt: |
+      Write a pattern that accepts a US zip code - **exactly five digits** - and
+      rejects everything else. The starter pattern accepts too much; submit it
+      first to see which inputs it lets through.
+    starter_code: |
+      \d{5}
+    check_type: "regex_cases"
+    hint: "Look at what it matched inside the rejected inputs. Where must the five digits start and end?"
+    regex_cases:
+      matches: ["12345", "00501"]
+      rejects: ["1234", "123456", "12a45", "ZIP 12345", "12345-6789"]
+  - id: "csv-file"
+    prompt: |
+      Match file names that **end in `.csv`** - a real dot, then csv, then
+      nothing more.
+    starter_code: |
+      .csv
+    check_type: "regex_cases"
+    hint: "Two fixes: make the dot a literal dot, and pin the match to the end of the name."
+    regex_cases:
+      matches: ["report.csv", "2026.sales.csv"]
+      rejects: ["reportcsv", "report.csv.bak", "report_csv", "csv"]
+review_questions:
+  - id: "anywhere"
+    question: "Without ^ and $, where in the text can a regex match?"
+    answer: "anywhere"
+    accept: ["anywhere in the text", "anywhere inside it", "any position"]
+    explain: "So \\d{5} matches the first five digits of 123456. Anchor validation patterns: ^...$."
+  - id: "dot"
+    question: "What does an unescaped . match in a regex?"
+    answer: "any character"
+    accept: ["anything", "any char", "any single character", "any character except newline"]
+    explain: "Write \\. for a literal dot - .csv also matches reportcsv."
+  - id: "test-rejects"
+    question: "To test a regex properly, check it against inputs it should accept and inputs it should ___?"
+    answer: "reject"
+    accept: ["refuse", "not match", "fail"]
+    explain: "Most regex bugs are patterns that accept too much. Only reject cases find them."

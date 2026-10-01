@@ -1,0 +1,140 @@
+id: "03-cron-schedules"
+chapter_ref: 3
+title: "Cron Schedules: Jobs That Run Themselves"
+prerequisites: ["02-github-actions-behind-the-scenes"]
+core: true
+estimated_minutes: 25
+explanation: |
+  A cron expression is five fields, read left to right:
+
+    ┌───────── minute        0-59
+    │ ┌─────── hour          0-23
+    │ │ ┌───── day of month  1-31
+    │ │ │ ┌─── month         1-12 or JAN-DEC
+    │ │ │ │ ┌─ day of week   0-6 (Sunday = 0) or SUN-SAT
+    │ │ │ │ │
+    30 9 * * 1-5      = 09:30, Monday to Friday
+
+  `*` any value · `,` a list (`1,15`) · `-` a range (`1-5`) · `/` a step
+  (`*/15` = every 15 minutes).
+
+  Behind the scenes there's no timer counting down. Every minute the scheduler
+  asks "do all five fields match right now?" - so the expression isn't a
+  duration, it's a filter on the clock. That's why `*/45 * * * *` does NOT mean
+  every 45 minutes: it matches minutes 0 and 45 of each hour, so the gaps are
+  45, then 15.
+
+  One rule surprises almost everyone: when day-of-month AND day-of-week are
+  both set, a day matches if EITHER does. `0 9 1 * MON` runs on the 1st of the
+  month *and* on every Monday, not "Mondays that fall on the 1st".
+
+  What GitHub adds on top - each of these has cost someone a missed run:
+
+  - **The clock is UTC by default.** `0 9 * * *` is 9am in London in winter,
+    not 9am where you are.
+  - **Every quoted cron.** A value starting with `*` is a YAML alias, so
+    `cron: */5 * * * *` without quotes doesn't even parse.
+  - **Minimum interval is 5 minutes**, and runs are *best effort*: at busy
+    times - the top of every hour especially - they can start late or be
+    dropped. Pick an odd minute like :17 rather than :00.
+  - **Missed runs don't catch up.** If a run was dropped, it's gone.
+  - **Schedules run on the default branch only**, using the latest commit.
+  - **In public repos, schedules are disabled after 60 days with no repository
+    activity.** Silent until you notice nothing has run.
+  - **Nothing stops a slow run overlapping the next one.** Two cleanup jobs
+    touching the same data at once is how records get processed twice. A
+    `concurrency` group allows at most one run in progress at a time.
+
+  Run `buildquick cron "30 9 * * 1-5"` to see the next times any expression
+  will fire - the fastest way to check you wrote what you meant.
+example_code: |
+  on:
+    schedule:
+      - cron: "17 */6 * * *"      # 00:17, 06:17, 12:17, 18:17 UTC
+    workflow_dispatch:             # adds a "Run workflow" button - test without waiting
+  concurrency:
+    group: nightly-cleanup         # at most one run of this group at a time...
+    cancel-in-progress: false      # ...and a new one waits instead of killing it
+  jobs:
+    cleanup:
+      runs-on: ubuntu-latest
+      steps:
+        - run: ./cleanup.sh
+challenges:
+  - id: "weekday-standup"
+    prompt: |
+      Make this workflow run at 09:30 UTC, Monday to Friday only.
+      Run `buildquick cron "<your expression>"` to check it before submitting.
+    starter_code: |
+      name: Standup reminder
+      on:
+        schedule:
+          - cron: "0 0 * * *"    # TODO
+      jobs:
+        remind:
+          runs-on: ubuntu-latest
+          steps:
+            - run: ./post-reminder.sh
+    check_type: "yaml_assertions"
+    hint: "Fields are minute, hour, day-of-month, month, day-of-week. Weekdays are 1-5 (or MON-FRI)."
+    assertions:
+      - path: "on.schedule[0].cron"
+        cron_fires: ["2026-09-21T09:30:00Z", "2026-09-25T09:30:00Z"]
+        message: "It should fire at 09:30 UTC on weekdays (checked on a Monday and a Friday)."
+      - path: "on.schedule[0].cron"
+        cron_skips: ["2026-09-26T09:30:00Z", "2026-09-27T09:30:00Z"]
+        message: "It should not fire at the weekend - restrict the day-of-week field."
+      - path: "on.schedule[0].cron"
+        cron_skips: ["2026-09-21T09:00:00Z", "2026-09-21T09:31:00Z", "2026-09-21T21:30:00Z"]
+        message: "It should fire at exactly 09:30 once a day - check the minute and the hour (24-hour clock: 21:30 is not 09:30)."
+  - id: "safe-scheduled-cleanup"
+    prompt: |
+      Make this cleanup job production-safe:
+      1. Run every 6 hours at 17 minutes past (00:17, 06:17, 12:17, 18:17 UTC) -
+         off the busy top of the hour.
+      2. Allow manual runs from the Actions tab (workflow_dispatch).
+      3. Add a top-level `concurrency` block with a `group` name so two runs
+         never overlap, and `cancel-in-progress: false` so a run in progress is
+         never killed halfway through.
+    starter_code: |
+      name: Cleanup
+      on:
+        schedule:
+          - cron: "0 * * * *"
+      jobs:
+        cleanup:
+          runs-on: ubuntu-latest
+          steps:
+            - run: ./cleanup.sh
+    check_type: "yaml_assertions"
+    hint: "'*/6' in the hour field means every 6th hour. workflow_dispatch: can be left with no value."
+    assertions:
+      - path: "on.schedule[0].cron"
+        cron_fires: ["2026-09-21T00:17:00Z", "2026-09-21T06:17:00Z", "2026-09-21T12:17:00Z", "2026-09-21T18:17:00Z"]
+        message: "It should fire at 00:17, 06:17, 12:17 and 18:17 UTC."
+      - path: "on.schedule[0].cron"
+        cron_skips: ["2026-09-21T00:00:00Z", "2026-09-21T03:17:00Z", "2026-09-21T06:00:00Z"]
+        message: "It should fire only at :17 past every 6th hour - not on the hour, and not every hour."
+      - path: "on.workflow_dispatch"
+        exists: true
+        message: "Add workflow_dispatch: under on: so you can trigger it by hand instead of waiting hours to test a change."
+      - path: "concurrency.group"
+        exists: true
+        message: "Add a top-level concurrency: block with a group: name, so a slow run can't overlap the next one."
+      - path: "concurrency.cancel-in-progress"
+        equals: false
+        message: "Set cancel-in-progress: false - killing a cleanup job halfway can leave data half-processed."
+review_questions:
+  - id: "fields"
+    question: "What are cron's five fields, in order? (comma-separated)"
+    answer: "minute, hour, day of month, month, day of week"
+    accept: ["minute hour day-of-month month day-of-week", "minute, hour, day-of-month, month, day-of-week", "min hour dom month dow"]
+    explain: "30 9 * * 1-5 = minute 30, hour 9, any day, any month, Monday-Friday."
+  - id: "timezone"
+    question: "Which timezone does GitHub Actions evaluate schedules in by default?"
+    answer: "UTC"
+    explain: "0 9 * * * is 9am UTC, not 9am where you are."
+  - id: "catch-up"
+    question: "If GitHub drops a scheduled run at a busy time, is it run later to catch up? (yes/no)"
+    answer: "no"
+    explain: "Missed runs are gone - that's why you pick an odd minute like :17 and add workflow_dispatch."

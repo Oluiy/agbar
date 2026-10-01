@@ -1,0 +1,98 @@
+id: "03-regex-that-bites"
+chapter_ref: 3
+title: "Regex That Bites: The g Flag, Precedence, and ReDoS"
+prerequisites: ["02-greedy-lazy-and-groups"]
+core: true
+estimated_minutes: 25
+explanation: |
+  Three regex bugs that don't look like bugs until production.
+
+  **1. The `g` flag makes `test()` stateful.** A regex with `g` remembers where
+  its last match ended, in `lastIndex`, and the next `test()` or `exec()` starts
+  searching from there. Reuse one `/.../g` to validate several strings and
+  every other call can fail on valid input. Use `g` only when you want *all*
+  matches (`matchAll`, `replace`); never on a regex you call `test()` on.
+
+  **2. `|` has the lowest precedence of anything.** `^cat|dog$` is not "exactly
+  cat or dog" - it's "starts with cat" OR "ends with dog", so it accepts
+  `category` and `hotdog`. Group the alternatives: `^(?:cat|dog)$`.
+
+  **3. Catastrophic backtracking (ReDoS - "regular expression denial of
+  service": crashing a server with one slow regex).** When a match fails, the engine tries
+  every other way the pattern could have split the input. `^(a+)+$` has a repeat
+  inside a repeat, so there are *exponentially* many splits: on 30 a's followed
+  by `!`, that's about a billion attempts. Point one at user input and a single
+  request can pin a CPU. It has taken down real systems: Stack Overflow (2016,
+  a whitespace-trimming regex) and Cloudflare (2019, a regex in a firewall rule).
+
+  The fix is almost always to remove the nesting: `^a+$` means the same thing
+  and runs in linear time. Be suspicious of `(x+)+`, `(x*)*`, `(.*)*`, and of
+  alternatives that can match the same text, like `(a|a)+`.
+  Check a pattern live: `buildquick regex '^(a+)+$' aaaaaaaaaaaaaaaaaaaaaaaaaaaa!`
+example_code: |
+  // Bad: g on a validator - lastIndex carries over between calls
+  const isId = /^\d+$/g;
+  // Good: no g - every call starts at 0
+  const isIdFixed = /^\d+$/;
+
+  // Bad: precedence - matches "category"
+  /^cat|dog$/;
+  // Good: grouped - exactly cat or dog
+  /^(?:cat|dog)$/;
+
+  // Bad: nested quantifier - exponential time on "aaaa...a!"
+  /^(a+)+$/;
+  // Good: same meaning, linear time
+  /^a+$/;
+challenges:
+  - id: "predict-lastindex"
+    prompt: |
+      Read program.js and write exactly what it prints into answer.txt. Don't run it.
+    starter_code: |
+      const isNumber = /^\d+$/g;
+      console.log(isNumber.test("42"));
+      console.log(isNumber.test("42"));
+      console.log(isNumber.test("42"));
+    check_type: "predict_output"
+    expected_output: |
+      true
+      false
+      true
+    hint: "After a successful match with g, lastIndex is 2. The next search starts at index 2. What happens to lastIndex when a search fails?"
+  - id: "pet-word"
+    prompt: |
+      Accept **exactly** `cat` or `dog` - nothing longer. The starter pattern
+      looks right; submit it to see what it lets through.
+    starter_code: |
+      ^cat|dog$
+    check_type: "regex_cases"
+    hint: "The anchors attach to one alternative each. Put the alternatives in a group so both anchors apply to both."
+    regex_cases:
+      matches: ["cat", "dog"]
+      rejects: ["category", "hotdog", "catdog", "dogs"]
+  - id: "fix-catastrophic"
+    prompt: |
+      This pattern accepts one or more `a` - and hangs on input that almost
+      matches. Rewrite it so it accepts the same strings in linear time. The
+      grader runs each case with a 200ms limit.
+    starter_code: |
+      ^(a+)+$
+    check_type: "regex_cases"
+    hint: "There's a repeat inside a repeat. One + is enough."
+    regex_cases:
+      matches: ["a", "aaaa"]
+      rejects: ["aaab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!"]
+review_questions:
+  - id: "lastindex"
+    question: "With the g flag, which regex property makes test() remember where the last match ended?"
+    answer: "lastIndex"
+    explain: "Don't put g on a regex you call test() on - reuse makes valid input fail every other call."
+  - id: "precedence"
+    question: "Does ^cat|dog$ match the string \"category\"? (yes/no)"
+    answer: "yes"
+    explain: "It means (^cat) OR (dog$). Use ^(?:cat|dog)$."
+  - id: "redos"
+    question: "What is it called when a regex takes exponential time on input that almost matches?"
+    answer: "catastrophic backtracking"
+    accept: ["redos", "exponential backtracking", "regex denial of service"]
+    explain: "Nested quantifiers like (a+)+ cause it. Remove the nesting: ^a+$."

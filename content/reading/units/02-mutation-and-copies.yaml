@@ -1,0 +1,92 @@
+id: "02-mutation-and-copies"
+chapter_ref: 2
+title: "Mutation: When a Copy Isn't a Copy"
+prerequisites: ["01-async-traps"]
+core: true
+estimated_minutes: 20
+explanation: |
+  The second place AI-written code goes quietly wrong is shared data: something
+  that looks like a new value is really the same object, so changing "the copy"
+  changes the original too - somewhere far away from where you look.
+
+  **Spread and `Object.assign` copy one level deep.** `{ ...order }` makes a new
+  object, but its `items` property still points at the *same* array. Push to
+  `copy.items` and `order.items` changes too. That's a shallow copy. For a deep
+  copy of plain data, use `structuredClone(order)`.
+
+  **Some array methods change the array they're called on.** `sort`, `reverse`,
+  `splice`, `push` and `fill` modify it in place and return it. So
+  `scores.sort()` inside a helper reorders the caller's array, even though the
+  helper "returns" a result. `toSorted()` and `toReversed()` (or
+  `[...scores].sort()`) leave the original alone.
+
+  How to read code like this: for every object or array a function receives,
+  ask *does anything here change it?* A function that changes its input without
+  saying so is a bug that shows up in someone else's code.
+example_code: |
+  const a = [3, 1, 2];
+  const b = a.sort();        // sorts a itself; b === a
+  const c = [3, 1, 2];
+  const d = c.toSorted();    // c unchanged; d is new
+
+  const user = { tags: ["admin"] };
+  const shallow = { ...user };            // shallow.tags === user.tags
+  const deep = structuredClone(user);     // deep.tags is a new array
+challenges:
+  - id: "predict-shallow-copy"
+    prompt: |
+      Read program.js and write exactly what it prints into answer.txt. Don't run it.
+    starter_code: |
+      const order = { id: 1, items: ["apple"] };
+      const copy = { ...order };
+      copy.id = 2;
+      copy.items.push("pear");
+      console.log(order.id);
+      console.log(order.items.length);
+      console.log(copy.items === order.items);
+    check_type: "predict_output"
+    expected_output: |
+      1
+      2
+      true
+    hint: "The spread copies the top level: id is a new value in the copy, items is the same array in both."
+  - id: "fix-sort-mutates"
+    prompt: |
+      topThree() returns the right scores, but callers report that their own
+      arrays get reordered after calling it. Fix it in solution.js so it returns
+      the three highest scores and leaves the input untouched.
+    starter_code: |
+      // Returns the three highest scores, highest first.
+      export function topThree(scores) {
+        return scores.sort((a, b) => b - a).slice(0, 3);
+      }
+    check_type: "test_passes"
+    hint: "sort() reorders the array it's called on. Sort a copy instead."
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { topThree } from "./solution.js";
+
+      test("returns the three highest, highest first", () => {
+        assert.deepEqual(topThree([5, 9, 1, 7]), [9, 7, 5]);
+      });
+
+      test("leaves the caller's array exactly as it was", () => {
+        const scores = [5, 9, 1, 7];
+        topThree(scores);
+        assert.deepEqual(scores, [5, 9, 1, 7]);
+      });
+review_questions:
+  - id: "shallow"
+    question: "After `const copy = { ...order }`, is copy.items the same array as order.items? (yes/no)"
+    answer: "yes"
+    explain: "Spread copies one level deep. Nested objects and arrays are shared; structuredClone copies all the way down."
+  - id: "sort"
+    question: "Does array.sort() change the array it's called on? (yes/no)"
+    answer: "yes"
+    explain: "It sorts in place and returns the same array. toSorted() returns a new one."
+  - id: "deep-copy"
+    question: "Which built-in function makes a deep copy of plain data in JavaScript?"
+    answer: "structuredClone"
+    accept: ["structuredclone()", "structuredClone()"]
+    explain: "Unlike spread, it copies nested objects and arrays too."

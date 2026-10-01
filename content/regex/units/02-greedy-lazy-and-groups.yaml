@@ -1,0 +1,84 @@
+id: "02-greedy-lazy-and-groups"
+chapter_ref: 2
+title: "Regex: Greedy, Lazy, and Groups - Why It Grabbed Too Much"
+prerequisites: ["01-anchors-and-escapes"]
+core: true
+estimated_minutes: 20
+explanation: |
+  **Quantifiers are greedy by default.** `*`, `+` and `{n,}` take as much as
+  they possibly can, then give characters back only if the rest of the pattern
+  fails. So `<(.+)>` on `<b>bold</b>` doesn't stop at the first `>` - `.+`
+  swallows the whole string, backs off one character, finds the last `>`, and
+  captures `b>bold</b`.
+
+  Two fixes, and knowing both matters:
+
+  - **Lazy**: add `?` after the quantifier. `.+?` takes as *little* as possible:
+    `<(.+?)>` captures `b`.
+  - **Negated class**: `<([^>]+)>` - "one or more of anything except `>`". Often
+    clearer and faster, because it can never run past the boundary at all.
+
+  **Parentheses capture.** `(\d+)-(\d+)` remembers each part as group 1 and 2;
+  in a replacement, `$1` and `$2` put them back. When you need grouping (for
+  `|` or a quantifier) but don't want a capture, use `(?:...)`. Named groups
+  make intent readable: `(?<year>\d{4})`.
+
+  **`match` changes with the `g` flag.** Without `g`, `"a1b22".match(/\d+/)`
+  returns the first match plus its groups. With `g`, it returns *every* match -
+  and no groups at all.
+example_code: |
+  "<b>bold</b>".match(/<(.+)>/)[1];      // "b>bold</b"   greedy: bad for tags
+  "<b>bold</b>".match(/<(.+?)>/)[1];     // "b"           lazy: good
+  "<b>bold</b>".match(/<([^>]+)>/)[1];   // "b"           negated class: good
+
+  "2026-09-27".replace(/(\d+)-(\d+)-(\d+)/, "$3/$2/$1");  // "27/09/2026"
+  "2026-09-27".match(/(?<year>\d{4})/).groups.year;       // "2026"
+challenges:
+  - id: "first-tag"
+    prompt: |
+      Capture the **name of the first tag** in the text - `b` from `<b>bold</b>`,
+      `em` from `<em>x</em> and <i>y</i>`. The starter pattern is greedy; submit
+      it to see what it captures instead.
+    starter_code: |
+      <(.+)>
+    check_type: "regex_cases"
+    hint: "Make the quantifier lazy (+?), or stop at the first > with a negated class [^>]."
+    regex_cases:
+      matches: ["<p>"]
+      rejects: ["no tags here", "<>"]
+      captures:
+        - input: "<b>bold</b>"
+          groups: ["b"]
+        - input: "<em>x</em> and <i>y</i>"
+          groups: ["em"]
+  - id: "predict-greedy-and-groups"
+    prompt: |
+      Read program.js and write exactly what it prints into answer.txt. Don't run it.
+    starter_code: |
+      const s = "a1b22c333";
+      console.log(s.match(/\d+/)[0]);
+      console.log(s.match(/\d+/g).join(","));
+      console.log(s.match(/\d+?/g).length);
+      console.log("2026-09-27".replace(/(\d+)-(\d+)-(\d+)/, "$3/$2/$1"));
+    check_type: "predict_output"
+    expected_output: |
+      1
+      1,22,333
+      6
+      27/09/2026
+    hint: "Without g, match finds the first run of digits. With g, every run. A lazy \\d+? takes one digit at a time."
+review_questions:
+  - id: "greedy"
+    question: "Are regex quantifiers like + and * greedy or lazy by default?"
+    answer: "greedy"
+    explain: "They take as much as possible, then back off. <(.+)> on <b>x</b> captures b>x</b."
+  - id: "lazy"
+    question: "What character after a quantifier (like +) makes it lazy?"
+    answer: "?"
+    accept: ["question mark", "a question mark"]
+    explain: ".+? takes as little as possible."
+  - id: "non-capturing"
+    question: "Which group syntax groups without capturing?"
+    answer: "(?:...)"
+    accept: ["(?:)", "?:", "(?: )"]
+    explain: "Use it when you need grouping for | or a quantifier but don't want a $1."

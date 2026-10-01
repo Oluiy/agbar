@@ -1,0 +1,84 @@
+id: "03-common-concepts"
+chapter_ref: 3
+title: "Common Programming Concepts: Variables, Types, and Control Flow"
+prerequisites: ["01-getting-started"]
+core: false
+estimated_minutes: 25
+explanation: |
+  Variables in Rust are immutable by default - the opposite default from most
+  languages. Writing `let x = 5;` means x can never be reassigned; the compiler
+  rejects any later `x = 6;` outright. Adding the `mut` keyword (`let mut x = 5;`)
+  opts back into mutability explicitly. This isn't a stylistic preference - it's
+  the first piece of a larger pattern in Rust where anything that could cause a
+  bug (an unexpected mutation, an unchecked null, a dangling reference) has to
+  be asked for on purpose rather than allowed by default.
+
+  Rust's basic scalar types are integers (`i32`, `u32`, `i64`, and similar,
+  where the number is the bit width and `u`/`i` mean unsigned/signed), floating
+  point (`f64` by default), `bool`, and `char`. Type inference fills in most of
+  these automatically from context, so explicit type annotations are usually
+  only needed when the compiler genuinely can't tell.
+
+  `if` in Rust is an expression, not just a statement - it produces a value, so
+  it can appear on the right-hand side of a `let`: `let x = if condition { 1 }
+  else { 2 };`. Both branches must produce the same type for this to compile.
+  For repetition, `loop` runs forever until an explicit `break`, `while` runs
+  while a condition holds, and `for` iterates over a range or collection - the
+  idiomatic default for anything with a known number of iterations.
+example_code: |
+  fn main() {
+      let mut count = 0;
+      while count < 3 {
+          println!("count is {count}");
+          count += 1;
+      }
+
+      let is_even = if count % 2 == 0 { "even" } else { "odd" };
+      println!("{count} is {is_even}");
+  }
+challenges:
+  - id: "add-mut"
+    prompt: |
+      This fails to compile with "cannot assign twice to immutable variable".
+      Fix it without renaming the variable or removing the reassignment.
+    starter_code: |
+      fn main() {
+          let score = 0;
+          let score = score + 10;
+          println!("{score}");
+      }
+    check_type: "compiles_only"
+    hint: "The variable needs to opt into mutability - there's a keyword for that."
+  - id: "if-as-expression"
+    prompt: |
+      Rewrite the if/else block below as a single `let` binding using if as an
+      expression, so the program still prints exactly: pass. Keep the same
+      threshold (60).
+    starter_code: |
+      fn main() {
+          let grade = 75;
+          let mut result = "";
+          if grade >= 60 {
+              result = "pass";
+          } else {
+              result = "fail";
+          }
+          println!("{result}");
+      }
+    check_type: "compiles_and_output_matches"
+    expected_output: "pass"
+    hint: 'let result = if grade >= 60 { "pass" } else { "fail" };'
+review_questions:
+  - id: "mut"
+    question: "Rust variables are immutable by default. Which keyword opts into mutability?"
+    answer: "mut"
+    explain: "let mut x = 5; - anything that could cause a bug has to be asked for on purpose."
+  - id: "if-expression"
+    question: "In Rust, is `if` a statement or an expression?"
+    answer: "expression"
+    accept: ["an expression"]
+    explain: "It produces a value, so it can sit on the right of a let."
+  - id: "unsigned"
+    question: "In u32, what does the u mean?"
+    answer: "unsigned"
+    explain: "u = unsigned, i = signed; the number is the width in bits."

@@ -1,0 +1,118 @@
+id: "02-exponential-backoff"
+chapter_ref: 2
+title: "Exponential Backoff With Jitter: Retrying Without Making It Worse"
+prerequisites: ["01-token-bucket"]
+core: true
+estimated_minutes: 20
+explanation: |
+  `buildquick concepts retry-mechanisms` says to retry transient failures with
+  increasing delays. This is the arithmetic behind that, plus the part almost
+  everyone leaves out.
+
+  Exponential backoff is the easy half: wait `base`, then `base * 2`, then
+  `base * 4`, capped at some ceiling so you don't eventually wait an hour. Two
+  guards matter - a **cap** on the delay, and a **maximum attempt count** so a
+  permanently broken dependency doesn't retry forever.
+
+  The part people skip is **jitter**, and skipping it causes outages. Picture a
+  thousand clients whose requests all fail at the same instant because a service
+  restarted. Without jitter they all wait exactly 1 second, then all retry at
+  exactly the same moment, hammering the recovering service with a synchronized
+  thundering herd, failing again, and repeating in lockstep. Adding randomness
+  spreads those retries across the window so the service gets a chance to
+  actually recover.
+
+  Worth internalizing: a retry is not free. Every retry is additional load on a
+  system that is already failing. Backoff exists to make retries help rather
+  than accelerate the collapse - which is also why it pairs with the circuit
+  breaker concept, where retries stop entirely once a dependency is clearly down.
+example_code: |
+  // No backoff, no jitter, no cap: three ways to turn a blip into an outage.
+  async function badRetry(fn) {
+    for (let i = 0; i < 5; i++) {
+      try {
+        return await fn();
+      } catch {
+        await sleep(1000); // every client, every time, in lockstep
+      }
+    }
+  }
+challenges:
+  - id: "implement-backoff"
+    prompt: |
+      Implement `backoffDelay(attempt, options)`, returning the delay in ms.
+
+      - `attempt` is 0-indexed: attempt 0 is the first retry.
+      - Delay grows exponentially: `baseMs * 2 ** attempt`.
+      - Never exceed `maxMs`.
+      - With `jitter: true`, return a random value in `[0, exponentialDelay]`
+        ("full jitter"), using the injected `random` function.
+      - With `jitter: false` (the default), return the exact capped delay.
+    starter_code: |
+      export function backoffDelay(attempt, options = {}) {
+        const {
+          baseMs = 100,
+          maxMs = 30_000,
+          jitter = false,
+          random = Math.random,
+        } = options;
+
+        // 1. exponential growth from baseMs
+        // 2. cap it at maxMs
+        // 3. if jitter, pick a random point in [0, delay]
+        return 0;
+      }
+    check_type: "test_passes"
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { backoffDelay } from "./solution.js";
+
+      test("doubles each attempt from the base", () => {
+        assert.equal(backoffDelay(0, { baseMs: 100 }), 100);
+        assert.equal(backoffDelay(1, { baseMs: 100 }), 200);
+        assert.equal(backoffDelay(2, { baseMs: 100 }), 400);
+        assert.equal(backoffDelay(3, { baseMs: 100 }), 800);
+      });
+
+      test("never exceeds maxMs", () => {
+        assert.equal(backoffDelay(20, { baseMs: 100, maxMs: 5000 }), 5000);
+        assert.equal(backoffDelay(50, { baseMs: 100, maxMs: 5000 }), 5000, "must not overflow past the cap");
+      });
+
+      test("full jitter picks a point between 0 and the capped delay", () => {
+        const opts = { baseMs: 100, maxMs: 30_000, jitter: true };
+        assert.equal(backoffDelay(2, { ...opts, random: () => 0 }), 0);
+        assert.equal(backoffDelay(2, { ...opts, random: () => 1 }), 400);
+        assert.equal(backoffDelay(2, { ...opts, random: () => 0.5 }), 200);
+      });
+
+      test("jitter respects the cap too", () => {
+        const delay = backoffDelay(30, { baseMs: 100, maxMs: 1000, jitter: true, random: () => 1 });
+        assert.equal(delay, 1000);
+      });
+
+      test("without jitter the delay is deterministic", () => {
+        const a = backoffDelay(3, { baseMs: 50 });
+        const b = backoffDelay(3, { baseMs: 50 });
+        assert.equal(a, b);
+      });
+    hint: "const delay = Math.min(maxMs, baseMs * 2 ** attempt); return jitter ? random() * delay : delay;"
+project_tiein:
+  note: "Pair this with the circuit-breaker concept: backoff decides how to retry, a circuit breaker decides when to stop retrying at all."
+review_questions:
+  - id: "jitter"
+    question: "What do you add to backoff so a thousand clients don't all retry at the same instant?"
+    answer: "jitter"
+    accept: ["randomness", "random jitter", "random delay"]
+    explain: "Without it, synchronized retries form a thundering herd that knocks the recovering service straight back down."
+  - id: "two-guards"
+    question: "Besides a cap on the delay, what second guard stops a permanently broken dependency being retried forever?"
+    answer: "max attempts"
+    accept: ["maximum attempts", "a maximum attempt count", "max retries", "maximum retries", "attempt limit"]
+    explain: "Give up after a bounded number of tries and surface the failure."
+  - id: "sequence"
+    question: "With base 100ms and no jitter, what is the third delay?"
+    answer: "400ms"
+    accept: ["400", "400 ms"]
+    explain: "base, base*2, base*4 -> 100, 200, 400."

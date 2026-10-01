@@ -1,0 +1,114 @@
+id: "01-yaml-that-means-what-you-think"
+chapter_ref: 1
+title: "YAML: What the Parser Actually Sees"
+prerequisites: []
+core: true
+estimated_minutes: 20
+explanation: |
+  YAML is not a programming language. It's a way to write down data - maps,
+  lists and single values - and every tool that reads it (GitHub Actions,
+  Docker Compose, Kubernetes) first turns your file into that data. Every bug
+  in this module comes from the same gap: **what you typed vs. what the parser
+  built.** Learn to see the second one and YAML stops being mysterious.
+
+  Only three shapes exist:
+
+    name: billing          # map entry: key, colon, SPACE, value
+    regions:               # a key whose value is a list...
+      - us-east-1          # ...one item per "- " line
+      - eu-west-1
+    tags: [api, prod]      # the same kind of list, written inline
+
+  **Indentation is the structure.** A child is indented further than its
+  parent; siblings line up exactly. Spaces only - a tab is an error, not a
+  style choice.
+
+  **Values are typed by how they look.** Unquoted, `20` is a number, `true` is
+  a boolean, and `3.10` is the number 3.1 - the trailing zero is gone. This
+  bites GitHub Actions users constantly: `python-version: 3.10` asks for Python
+  3.1. Likewise `01234` becomes 1234. Quote anything that is really text:
+  `"3.10"`, `"01234"`.
+
+  Older YAML 1.1 parsers (PyYAML, for one) go further and read `yes`, `no`,
+  `on` and `off` as booleans - the famous "Norway problem", where the country
+  code `NO` becomes `false`. Modern parsers don't, but you don't always know
+  which one reads your file. Quoting is always safe.
+
+  **Multi-line text** uses a block scalar:
+
+    script: |              # literal: newlines kept exactly
+      npm ci
+      npm test
+    summary: >             # folded: newlines become spaces
+      This long sentence
+      stays on one line.
+
+  `|` is what you want for shell commands - one command per line, exactly as
+  written.
+example_code: |
+  # What you typed          ->  what the parser built
+  version: 3.10             #   3.1        (number - zero lost)
+  version: "3.10"           #   "3.10"     (string - what you meant)
+  zip: 01234                #   1234
+  enabled: true             #   true       (boolean)
+  enabled: "true"           #   "true"     (string - a different thing!)
+  empty:                    #   null       (key exists, no value)
+  cmd: echo a && echo b     #   "echo a && echo b"  (one string)
+challenges:
+  - id: "fix-the-types"
+    prompt: |
+      This config has three values that don't mean what they look like.
+      Fix them so that: python_version is the string "3.10", zip_code is the
+      string "01234", and regions is a real list of two regions. debug must
+      stay a boolean false.
+    starter_code: |
+      service: billing
+      python_version: 3.10
+      zip_code: 01234
+      debug: false
+      regions: us-east-1, eu-west-1
+    check_type: "yaml_assertions"
+    hint: "Quotes turn a number-looking value into text. A list is either '- item' lines or [a, b]."
+    assertions:
+      - path: "python_version"
+        type: "string"
+        equals: "3.10"
+        message: "python_version must be the text \"3.10\". Unquoted, 3.10 is the number 3.1 - a tool would install the wrong version."
+      - path: "zip_code"
+        equals: "01234"
+        message: "zip_code lost its leading zero. Quote it."
+      - path: "regions"
+        equals: ["us-east-1", "eu-west-1"]
+        message: "regions is one string with a comma in it, not a list. Commas don't make lists in YAML - '- item' lines or [a, b] do."
+      - path: "debug"
+        type: "boolean"
+        equals: false
+        message: "debug should stay the boolean false - quoting it would make it the text \"false\", and code that checks `if (debug)` treats any non-empty text as true."
+  - id: "multiline-script"
+    prompt: |
+      One long command line is hard to read and hard to review. Rewrite
+      `script` as a literal block (`|`) with the three commands on three
+      separate lines, in the same order.
+    starter_code: |
+      script: npm ci && npm run build && npm test
+    check_type: "yaml_assertions"
+    hint: "script: |  then each command on its own line, indented two spaces more than 'script'."
+    assertions:
+      - path: "script"
+        type: "string"
+        matches: '^npm ci\nnpm run build\nnpm test\n?$'
+        message: "script should be three lines: npm ci, npm run build, npm test. Use '|' so the newlines are kept."
+review_questions:
+  - id: "three-ten"
+    question: "Unquoted, what value does YAML give `python_version: 3.10`?"
+    answer: "3.1"
+    explain: "It's a number, so the trailing zero is dropped. Quote it: \"3.10\"."
+  - id: "tabs"
+    question: "Can YAML be indented with tabs? (yes/no)"
+    answer: "no"
+    explain: "Spaces only - a tab is a parse error, not a style choice."
+  - id: "literal"
+    question: "Which block scalar indicator keeps newlines exactly - | or > ?"
+    answer: "|"
+    accept: ["pipe", "literal"]
+    explain: "| is literal (keeps newlines); > folds them into spaces."

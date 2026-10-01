@@ -1,0 +1,170 @@
+id: "04-consistent-hashing"
+chapter_ref: 4
+title: "Consistent Hashing: Adding a Server Without Moving Everything"
+prerequisites: ["03-lru-cache"]
+core: true
+estimated_minutes: 30
+explanation: |
+  You have N cache servers and need to decide which one holds a given key. The
+  obvious answer is `hash(key) % N`. It works perfectly until N changes.
+
+  Add one server to a five-server pool and the modulus changes for nearly every
+  key - roughly 80% of your cache relocates at once. Every one of those keys is
+  now a miss, so the traffic they were absorbing lands on your database
+  simultaneously. Scaling up your cache tier takes down your database. That's
+  not hypothetical; it's a well-known way to cause an outage while trying to add
+  capacity.
+
+  Consistent hashing fixes this by hashing servers and keys into the same space,
+  conventionally drawn as a ring. A key belongs to the first server found moving
+  clockwise from the key's position. Now adding a server only steals the keys
+  that fall between it and its predecessor - **about 1/N of them**. Everything
+  else stays exactly where it was. That minimal-remapping property is the whole
+  point, and it's why Redis Cluster, Cassandra, DynamoDB, Kafka, and most CDNs
+  use some version of it.
+
+  One catch: with few servers, random ring positions cluster badly, and one
+  server can end up owning far more of the ring than another. The standard fix
+  is **virtual nodes** - place each physical server at many points on the ring
+  (typically 100-200). Load evens out because you're averaging over many
+  placements rather than betting on one.
+example_code: |
+  // Modulo hashing: fine until the server count changes.
+  function pickServer(key, servers) {
+    return servers[hash(key) % servers.length];
+  }
+  // servers = [a, b, c]      -> "user:42" lands on b
+  // servers = [a, b, c, d]   -> "user:42" lands on d
+  // Almost every key moves. Every move is a cache miss.
+challenges:
+  - id: "implement-ring"
+    prompt: |
+      Implement a consistent hashing ring.
+
+      - `new HashRing(virtualNodes = 3)`.
+      - `addNode(name)` places `virtualNodes` points for that server on the ring.
+      - `removeNode(name)` removes all of its points.
+      - `getNode(key)` returns the name of the server that owns `key`: the first
+        ring position clockwise from `hash(key)`, wrapping around past the end
+        back to the first position.
+      - Return `undefined` when the ring is empty.
+
+      Use the provided `hash` function for both keys and virtual node points, so
+      results are deterministic. A virtual node's ring position is
+      `hash(`${name}#${i}`)`.
+    starter_code: |
+      // A small deterministic string hash (FNV-1a). Use this for everything.
+      export function hash(str) {
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++) {
+          h ^= str.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+      }
+
+      export class HashRing {
+        constructor(virtualNodes = 3) {
+          this.virtualNodes = virtualNodes;
+          // Suggested: keep a sorted array of { position, name }.
+          this.ring = [];
+        }
+
+        addNode(name) {
+          // Add `virtualNodes` points, then keep the ring sorted by position.
+        }
+
+        removeNode(name) {
+          // Drop every point belonging to this node.
+        }
+
+        getNode(key) {
+          // First position >= hash(key), wrapping to ring[0] if there is none.
+          return undefined;
+        }
+      }
+    check_type: "test_passes"
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { HashRing, hash } from "./solution.js";
+
+      test("returns undefined when the ring is empty", () => {
+        assert.equal(new HashRing().getNode("anything"), undefined);
+      });
+
+      test("routes every key to the only node", () => {
+        const r = new HashRing();
+        r.addNode("a");
+        for (const k of ["x", "y", "z", "user:42"]) assert.equal(r.getNode(k), "a");
+      });
+
+      test("is deterministic - the same key always lands on the same node", () => {
+        const r = new HashRing(50);
+        ["a", "b", "c"].forEach((n) => r.addNode(n));
+        const first = r.getNode("user:42");
+        for (let i = 0; i < 20; i++) assert.equal(r.getNode("user:42"), first);
+      });
+
+      test("wraps around past the highest position", () => {
+        const r = new HashRing(1);
+        r.addNode("a");
+        r.addNode("b");
+        // Some key must hash above every ring position and wrap to the first one.
+        const keys = Array.from({ length: 500 }, (_, i) => `k${i}`);
+        const maxPos = Math.max(...r.ring.map((e) => e.position));
+        const wrapping = keys.filter((k) => hash(k) > maxPos);
+        assert.ok(wrapping.length > 0, "test setup: expected some keys above the max position");
+        for (const k of wrapping) assert.ok(["a", "b"].includes(r.getNode(k)));
+      });
+
+      test("removing a node stops routing to it", () => {
+        const r = new HashRing(50);
+        ["a", "b", "c"].forEach((n) => r.addNode(n));
+        r.removeNode("b");
+        const keys = Array.from({ length: 300 }, (_, i) => `key${i}`);
+        for (const k of keys) assert.notEqual(r.getNode(k), "b");
+      });
+
+      test("adding a node moves only a small fraction of keys - the whole point", () => {
+        const r = new HashRing(100);
+        ["a", "b", "c", "d"].forEach((n) => r.addNode(n));
+        const keys = Array.from({ length: 2000 }, (_, i) => `key${i}`);
+        const before = keys.map((k) => r.getNode(k));
+
+        r.addNode("e");
+        const after = keys.map((k) => r.getNode(k));
+        const moved = before.filter((n, i) => n !== after[i]).length / keys.length;
+
+        // Ideal is ~1/5 = 20%. Modulo hashing would move ~80%.
+        assert.ok(moved < 0.35, `expected well under 35% of keys to move, got ${(moved * 100).toFixed(1)}%`);
+        assert.ok(moved > 0, "adding a node should take over some keys");
+      });
+
+      test("virtual nodes spread load reasonably evenly", () => {
+        const r = new HashRing(150);
+        ["a", "b", "c", "d"].forEach((n) => r.addNode(n));
+        const counts = { a: 0, b: 0, c: 0, d: 0 };
+        for (let i = 0; i < 4000; i++) counts[r.getNode(`key${i}`)]++;
+        for (const n of ["a", "b", "c", "d"]) {
+          assert.ok(counts[n] > 400, `node ${n} got only ${counts[n]} of 4000 keys - load is too skewed`);
+        }
+      });
+    hint: "Store { position, name } sorted by position. getNode: find the first entry with position >= hash(key); if none exists you're past the end, so wrap to ring[0]."
+project_tiein:
+  note: "This is why adding a cache node is routine in Redis Cluster or Cassandra rather than an outage - the ring keeps almost every key exactly where it was."
+review_questions:
+  - id: "modulo-moves"
+    question: "Going from 5 to 6 servers with hash(key) % N, roughly what percentage of keys move?"
+    answer: "80%"
+    accept: ["80", "about 80%", "~80%", "80 percent"]
+    explain: "Nearly every key's modulus changes, so most of the cache misses at once and the load lands on the database."
+  - id: "ring-moves"
+    question: "With consistent hashing, adding one server to N moves about what fraction of keys?"
+    answer: "1/N"
+    accept: ["1/n", "one nth", "1 / n"]
+    explain: "The new server only takes the keys between it and its predecessor on the ring."
+  - id: "direction"
+    question: "On the ring, a key belongs to the first server found moving in which direction?"
+    answer: "clockwise"
+    explain: "By convention - any fixed direction works, as long as everyone uses the same one."

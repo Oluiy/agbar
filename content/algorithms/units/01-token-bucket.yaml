@@ -1,0 +1,138 @@
+id: "01-token-bucket"
+chapter_ref: 1
+title: "Token Bucket: Rate Limiting That Allows Bursts"
+prerequisites: []
+core: true
+estimated_minutes: 25
+explanation: |
+  `buildquick concepts rate-limiting` tells you to cap how many requests a client
+  can make. This is the algorithm that actually does it, and it's the most widely
+  deployed one because it separates two things every other approach conflates:
+  the sustained rate you allow, and the burst you tolerate.
+
+  A bucket holds up to `capacity` tokens. Tokens refill at a constant rate of
+  `refillPerSecond`. Every request takes one token: if a token is there, the
+  request is allowed; if the bucket is empty, it's rejected. A client that has
+  been quiet accumulates tokens up to the cap, so it can burst - which is what
+  you want, because real traffic is bursty and a limiter that punishes every
+  spike is a limiter people route around.
+
+  Two details matter more than they look. **The bucket must never exceed its
+  capacity**, or a client idle overnight wakes up with unlimited burst. And
+  **refill is computed, not scheduled** - you don't run a timer adding tokens
+  every second. You store the last refill time, and on each request work out how
+  many tokens should have accrued since then. A timer per client doesn't scale to
+  a million clients; arithmetic does.
+
+  Notice the API below takes `now` as a parameter instead of calling
+  `Date.now()` internally. That isn't an exercise artifact - it's how you make
+  time-dependent logic testable. Code that reaches for the clock itself can only
+  be tested by actually sleeping, which is slow and flaky.
+example_code: |
+  // Fixed window, for contrast - simpler, and wrong at the boundary.
+  // A client can send `limit` requests at 11:59:59 and `limit` more at 12:00:00,
+  // getting double the intended rate across a two-second span.
+  class FixedWindow {
+    constructor(limit, windowMs) {
+      this.limit = limit;
+      this.windowMs = windowMs;
+      this.count = 0;
+      this.windowStart = 0;
+    }
+
+    allow(now) {
+      if (now - this.windowStart >= this.windowMs) {
+        this.windowStart = now;
+        this.count = 0;
+      }
+      if (this.count < this.limit) {
+        this.count++;
+        return true;
+      }
+      return false;
+    }
+  }
+challenges:
+  - id: "implement-token-bucket"
+    prompt: |
+      Implement TokenBucket so it passes the tests.
+
+      - `new TokenBucket(capacity, refillPerSecond)` starts full.
+      - `allow(now)` takes a timestamp in milliseconds, returns true if a token
+        was available (consuming it) and false otherwise.
+      - Tokens accrue based on elapsed time since the last call, and must never
+        exceed `capacity`.
+      - Partial tokens count: at 2 tokens/sec, 500ms earns half a token.
+    starter_code: |
+      export class TokenBucket {
+        constructor(capacity, refillPerSecond) {
+          this.capacity = capacity;
+          this.refillPerSecond = refillPerSecond;
+          this.tokens = capacity;
+          this.lastRefill = 0;
+        }
+
+        allow(now) {
+          // Work out how many tokens have accrued since lastRefill,
+          // cap at capacity, then spend one if you can.
+          return false;
+        }
+      }
+    check_type: "test_passes"
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { TokenBucket } from "./solution.js";
+
+      test("starts full and allows a burst up to capacity", () => {
+        const b = new TokenBucket(3, 1);
+        assert.equal(b.allow(0), true);
+        assert.equal(b.allow(0), true);
+        assert.equal(b.allow(0), true);
+        assert.equal(b.allow(0), false, "4th request in the same instant must be rejected");
+      });
+
+      test("refills at the configured rate", () => {
+        const b = new TokenBucket(2, 1);
+        b.allow(0);
+        b.allow(0);
+        assert.equal(b.allow(0), false);
+        assert.equal(b.allow(1000), true, "1 second at 1 token/sec earns exactly one token");
+        assert.equal(b.allow(1000), false, "but only one");
+      });
+
+      test("accrues partial tokens", () => {
+        const b = new TokenBucket(10, 2);
+        for (let i = 0; i < 10; i++) b.allow(0);
+        assert.equal(b.allow(250), false, "250ms at 2/sec is half a token - not enough");
+        assert.equal(b.allow(500), true, "500ms at 2/sec is a full token");
+      });
+
+      test("never accumulates beyond capacity", () => {
+        const b = new TokenBucket(2, 5);
+        b.allow(0);
+        b.allow(0);
+        // Idle for an hour: a naive implementation now has 18000 tokens.
+        let allowed = 0;
+        for (let i = 0; i < 50; i++) if (b.allow(3_600_000)) allowed++;
+        assert.equal(allowed, 2, "an idle client must not bank unlimited burst");
+      });
+    hint: "elapsed = (now - this.lastRefill) / 1000; this.tokens = Math.min(this.capacity, this.tokens + elapsed * this.refillPerSecond); then set lastRefill = now before spending."
+project_tiein:
+  note: "If `buildquick check` flagged your repo for no rate limiting, this is the thing it was asking for."
+review_questions:
+  - id: "never-exceed"
+    question: "A client has been idle all night. What limit must its token count never exceed?"
+    answer: "capacity"
+    accept: ["the capacity", "bucket capacity", "the bucket capacity"]
+    explain: "Without the cap, an idle client wakes up with unlimited burst - the whole point of the limiter is gone."
+  - id: "computed-refill"
+    question: "Is token refill computed from elapsed time, or scheduled with a timer?"
+    answer: "computed"
+    accept: ["computed from elapsed time", "elapsed time", "computed from time"]
+    explain: "Store the last refill time and compute on each request. A timer per client doesn't scale to a million clients; arithmetic does."
+  - id: "two-knobs"
+    question: "Token bucket separates two things other limiters conflate: the sustained rate, and the ___?"
+    answer: "burst"
+    accept: ["burst size", "bursts", "the burst"]
+    explain: "Rate = how fast tokens refill; burst = how many can pile up. Real traffic is bursty, so tolerating bursts matters."

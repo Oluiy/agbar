@@ -1,0 +1,144 @@
+id: "02-depend-on-an-interface"
+chapter_ref: 2
+title: "Depend on an Interface: Making the Database Swappable"
+prerequisites: ["01-extract-the-domain"]
+core: true
+estimated_minutes: 25
+explanation: |
+  A class that builds its own dependencies has quietly decided them for everyone.
+  `this.store = new PostgresUserStore()` inside a constructor means that service
+  is now a Postgres service forever: every test needs a real database, and
+  swapping stores means editing the business logic.
+
+  Dependency inversion is the fix, and the mechanical version is simpler than the
+  name suggests: **take the dependency as a parameter instead of constructing
+  it.** The service declares what it needs - something with `findByEmail` and
+  `save` - and the caller decides what that is. Production passes the Postgres
+  one. Tests pass a hash map. The service doesn't change, and doesn't know.
+
+  In a typed language you'd name that contract as an interface. In JavaScript
+  the contract is implicit, which makes the discipline more important, not less:
+  the shape is real whether or not the compiler checks it.
+
+  The property to aim for: **you can test every business rule without starting
+  anything.** No database, no Docker, no network. If a test needs infrastructure
+  to exercise a rule, the rule is wired to infrastructure it shouldn't know about.
+example_code: |
+  // Before: the dependency is decided inside.
+  class UserService {
+    constructor() {
+      this.store = new PostgresUserStore(); // now untestable without Postgres
+    }
+  }
+
+  // After: the caller decides.
+  class UserService {
+    constructor(store) {
+      this.store = store;
+    }
+  }
+challenges:
+  - id: "inject-the-store"
+    prompt: |
+      Rewrite `UserService` so the store is injected rather than constructed.
+
+      - `new UserService(store)` takes any object with `findByEmail(email)` and
+        `save(user)`.
+      - `register(email)` returns `{ created: false, reason: "exists" }` when
+        `findByEmail` returns a user, otherwise saves `{ email }` and returns
+        `{ created: true }`.
+      - It must not construct a store itself, and must not import one.
+      - Keep `PostgresUserStore` exported so production code still has something
+        real to pass in.
+    starter_code: |
+      export class PostgresUserStore {
+        constructor() {
+          this.connected = true;
+        }
+        async findByEmail(email) {
+          throw new Error("needs a real database");
+        }
+        async save(user) {
+          throw new Error("needs a real database");
+        }
+      }
+
+      export class UserService {
+        constructor() {
+          this.store = new PostgresUserStore();
+        }
+
+        async register(email) {
+          const existing = await this.store.findByEmail(email);
+          if (existing) {
+            return { created: false, reason: "exists" };
+          }
+          await this.store.save({ email });
+          return { created: true };
+        }
+      }
+    check_type: "test_passes"
+    hidden_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { UserService, PostgresUserStore } from "./solution.js";
+
+      function fakeStore(seed = []) {
+        const users = [...seed];
+        return {
+          saved: users,
+          async findByEmail(email) {
+            return users.find((u) => u.email === email);
+          },
+          async save(user) {
+            users.push(user);
+          },
+        };
+      }
+
+      test("the service runs against a fake store, with no database at all", async () => {
+        const store = fakeStore();
+        const svc = new UserService(store);
+        const result = await svc.register("a@example.com");
+        assert.deepEqual(result, { created: true });
+        assert.deepEqual(store.saved, [{ email: "a@example.com" }]);
+      });
+
+      test("rejects an email that already exists", async () => {
+        const svc = new UserService(fakeStore([{ email: "taken@example.com" }]));
+        assert.deepEqual(await svc.register("taken@example.com"), { created: false, reason: "exists" });
+      });
+
+      test("does not build its own store", async () => {
+        // A service that still constructs PostgresUserStore internally will throw
+        // "needs a real database" here instead of using what it was given.
+        const svc = new UserService(fakeStore());
+        await svc.register("b@example.com");
+      });
+
+      test("the real store is still exported for production to pass in", () => {
+        assert.equal(typeof PostgresUserStore, "function");
+      });
+
+      test("two services can use different stores at the same time", async () => {
+        const a = fakeStore();
+        const b = fakeStore();
+        await new UserService(a).register("one@example.com");
+        await new UserService(b).register("two@example.com");
+        assert.deepEqual(a.saved, [{ email: "one@example.com" }]);
+        assert.deepEqual(b.saved, [{ email: "two@example.com" }]);
+      });
+    hint: "constructor(store) { this.store = store; } - that's the whole change. register() stays exactly as it is."
+project_tiein:
+  note: "Same principle as the generated projects: controllers take a service interface, never a concrete implementation."
+review_questions:
+  - id: "mechanical"
+    question: "Dependency inversion, mechanically: instead of constructing a dependency inside the class, you take it as a ___?"
+    answer: "parameter"
+    accept: ["constructor parameter", "an argument", "argument", "a parameter"]
+    explain: "The caller decides: production passes Postgres, tests pass a hash map, the service never changes."
+  - id: "the-test"
+    question: "What should you be able to test every business rule without starting?"
+    answer: "anything"
+    accept: ["infrastructure", "a database", "the database", "nothing"]
+    explain: "No database, no Docker, no network. A test that needs infrastructure means a dependency is still hard-wired."
