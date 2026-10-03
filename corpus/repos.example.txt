@@ -1,0 +1,37 @@
+# Precision corpus: one repo path per line (~ expands to your home directory).
+# Copy this file to corpus/repos.txt, then add your own projects to it - those stay
+# local, because the baseline records which rule fired at which file:line.
+#
+#   git clone --depth 1 https://github.com/<repo> ~/corpus-repos/<name>
+#   npm run build && npm run corpus -- --update   # first time: write the baseline
+#   npm run corpus                                # after any rule change: diff it
+#
+# These nine are public, real applications (not libraries) across the stacks the
+# checker targets. Every false positive they exposed is now a test in check.test.ts.
+
+# .NET
+~/corpus-repos/eShop                                # dotnet/eShop
+~/corpus-repos/CleanArchitecture                    # jasontaylordev/CleanArchitecture
+# Go
+~/corpus-repos/service                              # ardanlabs/service
+~/corpus-repos/go-coffeeshop                        # thangchung/go-coffeeshop
+# Rust
+~/corpus-repos/realworld-axum-sqlx                  # launchbadge/realworld-axum-sqlx
+# TypeScript / JavaScript
+~/corpus-repos/nestjs-realworld-example-app         # lujakob/nestjs-realworld-example-app
+~/corpus-repos/node-express-realworld-example-app   # gothinkster/node-express-realworld-example-app
+# Java
+~/corpus-repos/spring-petclinic                     # spring-projects/spring-petclinic
+~/corpus-repos/spring-boot-realworld-example-app    # gothinkster/spring-boot-realworld-example-app
+
+# Held-out batch 2 - clone into ~/corpus-repos2/<name>.
+~/corpus-repos2/CleanArchitecture                   # ardalis/CleanArchitecture
+~/corpus-repos2/go-clean-template                   # evrone/go-clean-template
+~/corpus-repos2/go-clean-arch                       # bxcodec/go-clean-arch
+~/corpus-repos2/rust-web-app                        # rust10x/rust-web-app
+~/corpus-repos2/node-express-boilerplate            # hagopj13/node-express-boilerplate
+~/corpus-repos2/domain-driven-hexagon               # Sairyss/domain-driven-hexagon
+~/corpus-repos2/express-typescript-boilerplate      # w3tecch/express-typescript-boilerplate
+~/corpus-repos2/spring-petclinic-rest               # spring-petclinic/spring-petclinic-rest
+~/corpus-repos2/full-stack-fastapi-template         # fastapi/full-stack-fastapi-template
+~/corpus-repos2/fastapi-realworld-example-app       # nsidnev/fastapi-realworld-example-app
