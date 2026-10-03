@@ -1,0 +1,90 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Keeps buildquick's own dependencies AND the versions it writes into generated projects current. Every update is a PR; scaffold-verify.yml must pass before it merges.",
+  "extends": ["config:recommended"],
+  "schedule": ["before 6am on monday"],
+  "timezone": "UTC",
+  "prConcurrentLimit": 10,
+  "labels": ["dependencies"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Versions written into generated projects. Each pin is preceded by a `// renovate: datasource=npm depName=<package>` line naming the package it tracks.",
+      "managerFilePatterns": ["/^src/stacks/[^/]+/versions\\.ts$/"],
+      "matchStrings": [
+        "//\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*\\w+:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "versioningTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": "Spring Boot / jjwt pins in the hand-written POM templates: `// renovate: datasource=maven depName=<group:artifact>` above a `const X = \"1.2.3\"`.",
+      "managerFilePatterns": ["/^src/stacks/springboot/templates/pom\\.ts$/"],
+      "matchStrings": [
+        "//\\s*renovate:\\s*datasource=(?<datasource>[a-z-]+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*const\\s+\\w+\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "versioningTemplate": "maven"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Generated-project pins: keep the range's floor at the newest release (^12.1.2 -> ^12.2.0), so a new project starts from the version CI actually verified.",
+      "matchManagers": ["custom.regex"],
+      "rangeStrategy": "bump",
+      "addLabels": ["generated-projects"]
+    },
+    {
+      "description": "Spring Boot pins in generated POMs: a new release is worth a PR, but only CI proving a project builds against it can merge it.",
+      "matchDatasources": ["maven"],
+      "addLabels": ["generated-projects"]
+    },
+    {
+      "description": "Prisma's CLI, client and adapters must share a major, so they move together.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["prisma", "@prisma/**"],
+      "groupName": "prisma (generated projects)"
+    },
+    {
+      "description": "NestJS packages release together.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["@nestjs/**"],
+      "groupName": "nestjs (generated projects)"
+    },
+    {
+      "description": "HELD BACK: ts-jest declares typescript '>=4.3 <7', and TypeScript 7 (the native compiler) is unverified with Prisma 7's generated client. Lift deliberately, with a green scaffold-verify run.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
+      "description": "HELD BACK: Prisma 8 is a release candidate, and CLI/client/adapters must share a major.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["prisma", "@prisma/**"],
+      "allowedVersions": "<8"
+    },
+    {
+      "description": "HELD BACK: Drizzle 1.0 is a release candidate; drizzle-kit pairs with drizzle-orm's line.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["drizzle-orm", "drizzle-kit"],
+      "allowedVersions": "<1.0.0"
+    },
+    {
+      "description": "HELD BACK: Sequelize 7 is alpha.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["sequelize"],
+      "allowedVersions": "<7"
+    },
+    {
+      "description": "HELD BACK: better-sqlite3 13 has not been verified; 12 is the major Prisma's adapter bundles.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["better-sqlite3"],
+      "allowedVersions": "<13"
+    },
+    {
+      "description": "HELD BACK: class-validator 0.15.1 ships no type declarations despite declaring them, which breaks strict TypeScript. Re-test before lifting.",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["class-validator"],
+      "allowedVersions": "<0.15.0"
+    }
+  ]
+}
