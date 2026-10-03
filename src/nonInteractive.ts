@@ -24,6 +24,8 @@ export interface NonInteractiveFlags {
 interface ConfigFileShape {
   projectName?: string;
   stack?: string;
+  /** Where the project folder is created. Defaults to the current directory. */
+  outputDirectory?: string;
   isMicroservice?: boolean;
   serviceNames?: string[];
   includeTests?: boolean;
@@ -39,11 +41,24 @@ function loadConfigFile(path: string): ConfigFileShape {
   } catch (err) {
     throw new Error(`Couldn't read config file '${path}': ${(err as Error).message}`);
   }
+  let parsed: ConfigFileShape;
   try {
-    return JSON.parse(raw) as ConfigFileShape;
+    parsed = JSON.parse(raw) as ConfigFileShape;
   } catch (err) {
     throw new Error(`Config file '${path}' isn't valid JSON: ${(err as Error).message}`);
   }
+
+  // A misspelled or unsupported key used to be ignored in silence, which meant a
+  // config that asked for one thing and got another while still reporting success.
+  // Stack-specific settings belong under "addons", which each adapter validates.
+  const known = new Set(["projectName", "stack", "outputDirectory", "isMicroservice", "serviceNames", "includeTests", "httpPort", "usesLlmApi", "addons"]);
+  const unknown = Object.keys(parsed as Record<string, unknown>).filter((key) => !known.has(key));
+  if (unknown.length > 0) {
+    throw new Error(
+      `Config file '${path}' has unknown key(s): ${unknown.join(", ")}. Known keys: ${[...known].join(", ")}. Stack-specific settings go under "addons".`
+    );
+  }
+  return parsed;
 }
 
 /**
@@ -86,8 +101,11 @@ export function resolveNonInteractive(
   }
 
   const serviceNames = flags.services
-    ? flags.services.split(",").map((s) => s.trim()).filter((s) => s.length > 0)
-    : fileConfig.serviceNames ?? [];
+    ? flags.services
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+    : (fileConfig.serviceNames ?? []);
   // Naming services without also passing --microservice would otherwise
   // silently generate a monolith and ignore the names entirely.
   const isMicroservice = flags.microservice ?? fileConfig.isMicroservice ?? serviceNames.length > 0;
@@ -105,7 +123,7 @@ export function resolveNonInteractive(
   // said yes" from "user said nothing" - checking argv directly for the one
   // flag that can actually appear sidesteps that ambiguity.
   const noTestsPassed = process.argv.includes("--no-tests");
-  const includeTests = noTestsPassed ? false : fileConfig.includeTests ?? true;
+  const includeTests = noTestsPassed ? false : (fileConfig.includeTests ?? true);
 
   const portRaw = flags.port ?? fileConfig.httpPort;
   const httpPort = portRaw !== undefined ? Number(portRaw) : 8080;
@@ -131,7 +149,7 @@ export function resolveNonInteractive(
 
   const config: ScaffoldConfig = {
     projectName,
-    outputDirectory: process.cwd(),
+    outputDirectory: fileConfig.outputDirectory ?? process.cwd(),
     includeTests,
     isMicroservice,
     serviceNames,

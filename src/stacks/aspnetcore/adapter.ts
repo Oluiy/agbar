@@ -20,9 +20,6 @@ export const aspnetcoreAdapter: StackAdapter = {
   id: "aspnetcore",
   label: "ASP.NET Core (Clean Architecture, via BuildQuickPkg)",
   interactiveHandoff: true,
-  // BuildQuickPkg is fully interactive with no flag surface yet (see promptAddons
-  // below), so there's nothing --yes/--config could feed it non-interactively -
-  // running it that way would just hang waiting for input from a TTY that isn't there.
   supportsNonInteractive: false,
 
   resolveAddons(): Record<string, unknown> {
@@ -44,9 +41,7 @@ export const aspnetcoreAdapter: StackAdapter = {
 
   async generate(config: ScaffoldConfig): Promise<void> {
     if (!isBuildQuickPkgInstalled()) {
-      throw new Error(
-        "BuildQuickPkg isn't installed. Run 'dotnet tool install --global BuildQuickPkg' first, then try again."
-      );
+      throw new Error("BuildQuickPkg isn't installed. Run 'dotnet tool install --global BuildQuickPkg' first, then try again.");
     }
 
     await new Promise<void>((resolve, reject) => {

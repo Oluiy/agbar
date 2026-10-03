@@ -1,70 +1,97 @@
 #!/usr/bin/env node
-import path from "node:path";
 import { Command } from "commander";
 import * as clack from "@clack/prompts";
 import pc from "picocolors";
 import { runPrompts } from "./prompts.js";
 import { resolveNonInteractive, type NonInteractiveFlags } from "./nonInteractive.js";
 import { generateProject } from "./engine.js";
+import { adonisAdapter } from "./stacks/adonis/adapter.js";
 import { aspnetcoreAdapter } from "./stacks/aspnetcore/adapter.js";
+import { axumAdapter } from "./stacks/axum/adapter.js";
+import { djangoAdapter } from "./stacks/django/adapter.js";
+import { fastapiAdapter } from "./stacks/fastapi/adapter.js";
+import { nestjsAdapter } from "./stacks/nestjs/adapter.js";
+import { expressAdapter, fastifyAdapter } from "./stacks/node/adapter.js";
+import type { VerifyResult } from "./stacks/verifyResult.js";
 import { springbootAdapter } from "./stacks/springboot/adapter.js";
 import type { StackAdapter } from "./stacks/StackAdapter.js";
-import type { ScaffoldConfig } from "./config.js";
-import { buildRecommendationContext, getRecommendations, type RecommendationTier } from "./recommendations.js";
-import { buildDecisionContext, getDecisions } from "./explain.js";
-import { renderArchitectureDoc } from "./explainRender.js";
-import { renderLevelingUpDoc } from "./conceptsRender.js";
+import { printCheck } from "./check/checkCommand.js";
 import { printConceptDetail, printConceptsList } from "./conceptsCommand.js";
-import { printStatus, printUnitDetail, printUnitList, submitChallenge } from "./learn/learnCommand.js";
-import { writeFile } from "./utils/fsWrite.js";
+import {
+  printLearnLanguages,
+  printStatus,
+  printUnitDetail,
+  printUnitList,
+  submitChallenge,
+  submitLastOpened,
+  SUPPORTED_LEARN_LANGUAGES,
+} from "./learn/learnCommand.js";
+import { runReview } from "./learn/review/reviewCommand.js";
+import { printTrackDetail, printTracksList } from "./learn/tracksCommand.js";
+import { printCronSchedule } from "./learn/cronCommand.js";
+import { printRegexReport } from "./learn/regex/regexCommand.js";
+import { runWelcome, shouldShowWelcome } from "./welcome.js";
+import { printLearningSuggestions, printRecommendations, writeTeachingDocs } from "./postGenerate.js";
 
-const TIER_LABEL: Record<RecommendationTier, string> = {
-  essential: "Essential",
-  production: "Before you ship",
-  scale: "At scale",
-};
+const stacks: StackAdapter[] = [
+  aspnetcoreAdapter,
+  springbootAdapter,
+  fastapiAdapter,
+  djangoAdapter,
+  nestjsAdapter,
+  expressAdapter,
+  fastifyAdapter,
+  adonisAdapter,
+  axumAdapter,
+];
 
-const TIER_COLOR: Record<RecommendationTier, (s: string) => string> = {
-  essential: pc.green,
-  production: pc.yellow,
-  scale: pc.cyan,
-};
+const COMMAND_NAMES = ["concepts", "learn", "check", "tracks", "cron", "regex", "submit"];
 
-function writeTeachingDocs(outDir: string, config: ScaffoldConfig, adapter: StackAdapter): void {
-  const ctx = buildDecisionContext(adapter.id, config.addons, config.includeTests, config.isMicroservice);
-  const decisions = getDecisions(ctx);
-  if (decisions.length === 0) return;
+/**
+ * Reports whether the generated project actually installed and passed its tests.
+ * Worth printing loudly either way: "it generated" and "it works" are different
+ * claims, and only one of them is worth trusting.
+ */
+function printVerifyResult(result: VerifyResult | undefined): void {
+  if (!result) return;
 
-  const doc = renderArchitectureDoc(config.projectName, decisions);
-  writeFile(path.join(outDir, "ARCHITECTURE.md"), doc);
-
-  const levelingUpDoc = renderLevelingUpDoc(config.projectName);
-  writeFile(path.join(outDir, "LEVELING-UP.md"), levelingUpDoc);
-
-  clack.log.message(
-    pc.bold(
-      `Wrote ARCHITECTURE.md (${decisions.length} callout${decisions.length === 1 ? "" : "s"} on why this project is shaped the way it is) and LEVELING-UP.md (reliability concepts this scaffold doesn't cover yet).`
-    )
-  );
-}
-
-function printRecommendations(config: ScaffoldConfig, adapter: StackAdapter): void {
-  const ctx = buildRecommendationContext(adapter.id, config.addons, config.includeTests, config.usesLlmApi);
-  const recommendations = getRecommendations(ctx);
-  if (recommendations.length === 0) return;
-
-  clack.log.message(pc.bold("Recommended for what you just built:"));
-  let lastTier: RecommendationTier | null = null;
-  for (const rec of recommendations) {
-    if (rec.tier !== lastTier) {
-      clack.log.message(TIER_COLOR[rec.tier](`  ${TIER_LABEL[rec.tier]}`));
-      lastTier = rec.tier;
-    }
-    clack.log.message(`    ${pc.bold(rec.name)} - ${rec.description}\n    ${pc.dim(rec.url)}`);
+  if (result.installed === undefined) {
+    clack.log.warn(`Not verified: ${result.detail}`);
+    return;
   }
+  if (!result.installed) {
+    clack.log.error(`Dependency install failed (${result.via}). The files are written; fix the install and re-run the tests.\n${result.detail}`);
+    return;
+  }
+  if (result.testsPassed) {
+    clack.log.success(pc.green(`Verified: dependencies installed (${result.via}) and the test suite passes.`));
+    return;
+  }
+  clack.log.error(`Installed (${result.via}), but the tests did not pass:\n${result.detail}`);
 }
 
-const stacks: StackAdapter[] = [aspnetcoreAdapter, springbootAdapter];
+function editDistance(a: string, b: string): number {
+  const d: number[][] = Array.from({ length: a.length + 1 }, (_, i) => [i, ...new Array<number>(b.length).fill(0)]);
+  for (let j = 0; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+  }
+  return d[a.length][b.length];
+}
+
+/**
+ * The project name argument swallows anything, so a mistyped command used to
+ * silently start scaffolding a project named after the typo - `buildquick chekc`
+ * would generate ./chekc rather than saying "did you mean check?". Catch the
+ * near-misses before generation starts.
+ */
+function misspelledCommand(arg: string | undefined): string | undefined {
+  if (!arg) return undefined;
+  const lower = arg.toLowerCase();
+  return COMMAND_NAMES.find((name) => name !== lower && editDistance(lower, name) <= 2);
+}
 
 const program = new Command();
 
@@ -89,15 +116,27 @@ program
   .option("--llm-api", "This project calls an LLM API (OpenAI/Anthropic/Groq/...) - drives the ai-cost-guard recommendation")
   .option("--no-explain", "Skip generating ARCHITECTURE.md and LEVELING-UP.md (the teaching output)")
   .action(async (projectNameArg: string | undefined, opts: NonInteractiveFlags & { yes?: boolean; explain?: boolean }) => {
+    const typo = misspelledCommand(projectNameArg);
+    if (typo) {
+      console.error(pc.red(`Unknown command '${projectNameArg}'. Did you mean '${typo}'?`));
+      console.error(pc.dim(`If you really meant to scaffold a project called '${projectNameArg}', run: buildquick ${projectNameArg} --stack springboot`));
+      process.exitCode = 1;
+      return;
+    }
+
+    if (shouldShowWelcome(projectNameArg, opts) && !(await runWelcome())) return;
+
     const nonInteractive = Boolean(opts.yes || opts.config);
     try {
-      const { config, adapter } = nonInteractive
-        ? resolveNonInteractive(stacks, opts, projectNameArg)
-        : await runPrompts(stacks, projectNameArg);
+      const { config, adapter } = nonInteractive ? resolveNonInteractive(stacks, opts, projectNameArg) : await runPrompts(stacks, projectNameArg);
 
-      const outDir = await generateProject(config, adapter);
+      const { outDir, verify } = await generateProject(config, adapter);
+      printVerifyResult(verify);
       printRecommendations(config, adapter);
-      if (opts.explain !== false) writeTeachingDocs(outDir, config, adapter);
+      if (opts.explain !== false) {
+        writeTeachingDocs(outDir, config, adapter);
+        printLearningSuggestions(config, adapter);
+      }
 
       const doneMessage = pc.green(`Done. cd into "${config.projectName}" to get started.`);
       if (nonInteractive) {
@@ -132,12 +171,28 @@ program
 
 program
   .command("learn")
-  .description("Interactive lessons for a language (currently: rust) - independent of scaffolding a project")
-  .argument("<language>", "Language to learn, e.g. rust")
-  .argument("[unitId]", "Unit id to open (omit to list all units)")
-  .option("--submit <challengeId>", "Run the automated check for a challenge in this unit")
+  .description("Interactive lessons, graded by real checks - independent of scaffolding a project")
+  .argument("[course]", "A course: traps | regex | yaml | reading | algorithms | refactoring | rust (omit to see them all)")
+  .argument("[lesson]", "A lesson's number (1, 2...) or any part of its name (omit to list the lessons)")
+  .option("--submit <challengeId>", "Grade a challenge in this lesson (or just use: buildquick submit)")
   .option("--status", "Show your progress instead of listing/opening units")
-  .action(async (language: string, unitId: string | undefined, opts: { submit?: string; status?: boolean }) => {
+  .option("--review", "Quiz yourself on what's due (all languages if none given); questions return at growing intervals")
+  .action(async (language: string | undefined, unitId: string | undefined, opts: { submit?: string; status?: boolean; review?: string | boolean }) => {
+    if (opts.review !== undefined) {
+      // `--review 30` from before questions were scheduled individually: still accepted, so old commands don't break.
+      if (typeof opts.review === "string") console.log(pc.dim("(--review no longer takes a number of days: each question now has its own schedule.)"));
+      if (language && !SUPPORTED_LEARN_LANGUAGES.includes(language)) {
+        console.error(pc.red(`No lessons for '${language}' yet. Supported: ${SUPPORTED_LEARN_LANGUAGES.join(", ")}.`));
+        process.exitCode = 1;
+        return;
+      }
+      await runReview(language ? [language] : SUPPORTED_LEARN_LANGUAGES);
+      return;
+    }
+    if (!language) {
+      printLearnLanguages();
+      return;
+    }
     if (opts.status) {
       printStatus(language);
     } else if (opts.submit && unitId) {
@@ -149,10 +204,120 @@ program
     }
   });
 
+program
+  .command("check")
+  .description("Grade an existing repo against the backend concepts - every finding links to the concept that explains it")
+  .argument("[path]", "Repo to check (default: current directory)", ".")
+  .option("--explain", "Include the fix for each concept inline")
+  .option("--fix-plan", "Render findings as a pasteable checklist instead of the narrative report")
+  .option("--json", "Emit the report as a single JSON object - no color, no narrative lines mixed in")
+  .option("--report-gap [findingNumber]", "Report a wrong finding (by number) or an unrecognized stack - opens your mail client, nothing sends automatically")
+  .option("--note <text>", "A note to include with --report-gap")
+  .option("--include-evidence", "Include the flagged source line with --report-gap (off by default - metadata only)")
+  .action(
+    (
+      targetPath: string,
+      opts: { explain?: boolean; fixPlan?: boolean; json?: boolean; reportGap?: string | boolean; note?: string; includeEvidence?: boolean }
+    ) => {
+      let reportGap: number | true | undefined;
+      if (opts.reportGap === true) reportGap = true;
+      else if (typeof opts.reportGap === "string") {
+        const n = Number(opts.reportGap);
+        if (Number.isNaN(n)) {
+          console.error(pc.red(`--report-gap expects a finding number, got '${opts.reportGap}'.`));
+          process.exitCode = 1;
+          return;
+        }
+        reportGap = n;
+      }
+      printCheck(targetPath, {
+        explain: opts.explain === true,
+        fixPlan: opts.fixPlan === true,
+        json: opts.json === true,
+        reportGap,
+        note: opts.note,
+        includeEvidence: opts.includeEvidence === true,
+      });
+    }
+  );
+
+program
+  .command("tracks")
+  .description("Ordered learning paths through the concepts and lessons, grouped by audience")
+  .argument("[trackId]", "Track to open (omit to list them all)")
+  .action((trackId: string | undefined) => {
+    if (trackId) {
+      printTrackDetail(trackId);
+    } else {
+      printTracksList();
+    }
+  });
+
+program
+  .command("cron")
+  .description("Show when a cron expression will actually fire (UTC and your local time)")
+  .argument("<expression>", 'Quote it, e.g. "30 9 * * 1-5"')
+  .option("-n, --count <n>", "How many upcoming runs to show", "5")
+  .action((expression: string, opts: { count: string }) => {
+    printCronSchedule(expression, Number(opts.count));
+  });
+
+program
+  .command("submit")
+  .description("Grade your answer for the lesson you last opened - no need to retype it")
+  .argument("[challengeId]", "Which challenge (omit for the first one you haven't passed)")
+  .action(async (challengeId: string | undefined) => {
+    await submitLastOpened(challengeId);
+  });
+
+program
+  .command("regex")
+  .description("Show what a regex matches in your text, highlighted, plus the classic pitfalls in it")
+  .argument("<pattern>", "Quote it: '^\\d{5}$' or '/^\\d{5}$/i'")
+  .argument("[texts...]", "Text to try it on")
+  .option("-f, --flags <flags>", "Flags for a bare pattern, e.g. i or gm", "")
+  .action((pattern: string, texts: string[], opts: { flags: string }) => {
+    printRegexReport(pattern, texts, opts.flags);
+  });
+
+// The scaffolding flags below are long, and a first-time reader hits them before
+// the command list. This puts the four things you can actually do at the top.
+program.addHelpText(
+  "beforeAll",
+  `
+New here? Run  buildquick  on its own for a menu.
+
+Learn
+  buildquick tracks first-steps   A guided path - the easiest place to start
+  buildquick learn                Courses of short lessons, graded as you go
+  buildquick submit               Grade your answer for the lesson you're on
+  buildquick learn --review       Quick quiz on what you've learned, so it sticks
+  buildquick concepts <word>      Look anything up: concepts money, concepts timeout
+
+Check
+  buildquick check                Find problems in a project, with why each matters
+  buildquick regex '<re>' text    See what a regex matches, and its pitfalls
+  buildquick cron "<expr>"        See exactly when a schedule will run
+
+Build
+  buildquick <ProjectName>        Create a new backend project
+`
+);
+
 program.addHelpText(
   "after",
   "\nRun 'buildquick concepts' any time - during scaffolding or in the middle of writing your own code - to look up things like caching, rate limiting, or idempotency without leaving the terminal." +
-    "\nRun 'buildquick learn rust' for interactive lessons with real pass/fail checks, independent of scaffolding a project."
+    "\nRun 'buildquick learn rust' for interactive lessons with real pass/fail checks, independent of scaffolding a project." +
+    "\nRun 'buildquick tracks' for ordered paths through both, for students, interview prep, production readiness, or onboarding." +
+    '\nTeams can ship their own lessons and tracks by pointing BUILDQUICK_CONTENT (or .buildquickrc\'s "contentDir") at their own content directory.'
 );
 
-program.parseAsync();
+// Every "fail loudly" error (a corrupted progress file, a broken lesson, a bad
+// .buildquickrc) is written to be read by a person: print the message, not a
+// stack trace. BUILDQUICK_DEBUG=1 brings the trace back for bug reports.
+program.parseAsync().catch((err: unknown) => {
+  const error = err instanceof Error ? err : new Error(String(err));
+  console.error(pc.red(error.message));
+  if (process.env.BUILDQUICK_DEBUG) console.error(error.stack);
+  process.exitCode = 1;
+});
