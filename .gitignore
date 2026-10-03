@@ -2,3 +2,12 @@ node_modules/
 dist/
 *.log
 .DS_Store
+test-fixtures/
+# The precision corpus is local-only. baseline.txt lists which rule fired at which
+# file:line in real private projects - no secret values, but a map straight to them -
+# and repos.txt leaks local paths and project names. repos.example.txt is committed.
+corpus/*
+!corpus/repos.example.txt
+!corpus/README.md
+ROADMAP.md
+commit.md
