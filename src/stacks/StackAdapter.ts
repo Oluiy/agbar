@@ -1,4 +1,5 @@
 import type { ScaffoldConfig } from "../config.js";
+import type { VerifyResult } from "./verifyResult.js";
 
 /**
  * The contract every supported stack implements. `engine.ts` and `prompts.ts`
@@ -22,5 +23,14 @@ export interface StackAdapter {
   // invalid rather than silently defaulting - a scripted/CI run should fail loudly on bad
   // input, not silently generate something the caller didn't ask for.
   readonly resolveAddons: (raw: Record<string, unknown>) => Record<string, unknown>;
-  readonly generate: (config: ScaffoldConfig, outDir: string) => Promise<void>; // Writes the generated project to `outDir`. Throws on failure; writes nothing partial on a thrown error where practical.
+  // Writes the generated project to `outDir`. Throws on failure; writes nothing partial on a thrown error where practical.
+  // Adapters that can install and test their own output report the outcome by returning it;
+  // the rest return nothing.
+  readonly generate: (config: ScaffoldConfig, outDir: string) => Promise<GenerateResult | void>;
+}
+
+/** What `generate` reports back beyond "the files were written". */
+export interface GenerateResult {
+  /** Whether the generated project installed and passed its own tests. Absent when not asked for. */
+  verify?: VerifyResult;
 }

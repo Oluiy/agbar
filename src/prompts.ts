@@ -1,17 +1,8 @@
-import { cancel, confirm, intro, isCancel, select, text } from "@clack/prompts";
+import { cancel, confirm, intro, select, text } from "@clack/prompts";
 import type { ScaffoldConfig } from "./config.js";
 import type { StackAdapter } from "./stacks/StackAdapter.js";
 import { isValidIdentifierName } from "./utils/nameValidation.js";
-
-function bail(): never {
-  cancel("Cancelled.");
-  process.exit(1);
-}
-
-function checkCancel<T>(value: T | symbol): T {
-  if (isCancel(value)) bail();
-  return value as T;
-}
+import { checkCancel } from "./utils/prompts.js";
 
 /**
  * Prompts for every setting genuinely shared across stacks, then delegates to the chosen
@@ -21,10 +12,7 @@ function checkCancel<T>(value: T | symbol): T {
  * such concept) is stack-specific mechanics, not a universal concept - each adapter that
  * needs it asks its own version inside promptAddons().
  */
-export async function runPrompts(
-  stacks: StackAdapter[],
-  projectNameArg?: string
-): Promise<{ config: ScaffoldConfig; adapter: StackAdapter }> {
+export async function runPrompts(stacks: StackAdapter[], projectNameArg?: string): Promise<{ config: ScaffoldConfig; adapter: StackAdapter }> {
   intro("buildquick - universal backend scaffolder");
 
   let projectName: string;
