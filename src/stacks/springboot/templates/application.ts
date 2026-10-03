@@ -6,12 +6,7 @@
  * would never reach. Package-by-Layer and Package-by-Feature don't need it: the
  * main class already sits at the root of everything else, so the default applies.
  */
-export function mainApplicationClass(
-  mainPackage: string,
-  projectName: string,
-  includeJpa: boolean,
-  scanBasePackage?: string
-): string {
+export function mainApplicationClass(mainPackage: string, projectName: string, includeJpa: boolean, scanBasePackage?: string): string {
   const jpaImports = includeJpa
     ? `
 import org.springframework.boot.persistence.autoconfigure.EntityScan;

@@ -7,10 +7,8 @@ import type { DbProvider } from "./applicationYml.js";
  * Package-by-Layer/Package-by-Feature, which have no submodule to target - the
  * whole project builds and packages as one jar.
  */
-export function dockerfile(projectNameLower: string, apiModule?: string): string {
-  const buildCommand = apiModule
-    ? `RUN mvn -pl ${apiModule} -am clean package -DskipTests`
-    : "RUN mvn clean package -DskipTests";
+export function dockerfile(apiModule?: string): string {
+  const buildCommand = apiModule ? `RUN mvn -pl ${apiModule} -am clean package -DskipTests` : "RUN mvn clean package -DskipTests";
   const jarPath = apiModule ? `/build/${apiModule}/target/*.jar` : "/build/target/*.jar";
 
   return `FROM maven:3.9-eclipse-temurin-21 AS build

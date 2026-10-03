@@ -6,7 +6,13 @@
  * files via ProjectReference.
  */
 
-const SPRING_BOOT_VERSION = "4.1.0";
+// These pins are used by the hand-written POM only (multi-module, or Initializr
+// unreachable). The default single-module path asks Spring Initializr, which always
+// answers with Spring's current release. Renovate keeps this one current (renovate.json),
+// and scaffold-verify.yml builds and tests a project from it before a bump can merge.
+// renovate: datasource=maven depName=org.springframework.boot:spring-boot-starter-parent
+const SPRING_BOOT_VERSION = "4.1.1";
+// An LTS release, so it moves on purpose, not by bot.
 const JAVA_VERSION = "21";
 
 interface ModuleDependency {
@@ -205,6 +211,7 @@ export function dbDriverDependency(provider: "postgres" | "mysql"): ModuleDepend
     : { groupId: "com.mysql", artifactId: "mysql-connector-j", scope: "runtime" };
 }
 
+// renovate: datasource=maven depName=io.jsonwebtoken:jjwt-api
 const JJWT_VERSION = "0.13.0";
 
 export const JJWT_DEPENDENCIES: ModuleDependency[] = [

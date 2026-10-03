@@ -1,4 +1,5 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { listFiles } from "../../testing/listFiles.js";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -14,23 +15,6 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
 });
-
-/** Every file under `dir`, as paths relative to `dir`, sorted - the shape a snapshot diff actually reads clearly. */
-function listFiles(dir: string): string[] {
-  const out: string[] = [];
-  function walk(current: string) {
-    for (const entry of readdirSync(current)) {
-      const full = path.join(current, entry);
-      if (statSync(full).isDirectory()) {
-        walk(full);
-      } else {
-        out.push(path.relative(dir, full));
-      }
-    }
-  }
-  walk(dir);
-  return out.sort();
-}
 
 function baseConfig(overrides: Partial<ScaffoldConfig> = {}): ScaffoldConfig {
   return {
@@ -133,5 +117,33 @@ describe("springbootAdapter.generate - content correctness", () => {
     const files = listFiles(outDir);
     expect(files).toContain("mvnw");
     expect(files).toContain("mvnw.cmd");
+  });
+
+  // The Dockerfile's build command is the one place the module layout leaks into
+  // generated output: Multi-Module has to target its api submodule with `-pl`,
+  // and a single-module project has no submodule to target. Nothing asserted
+  // this, so a wrong argument would have produced a Dockerfile that fails only
+  // when a user actually runs `docker build`.
+  it("Multi-Module Dockerfile builds and copies the api submodule specifically", async () => {
+    const outDir = path.join(tmpDir, "out");
+    await springbootAdapter.generate(
+      baseConfig({ addons: { structure: "multi-module", isFourLayer: true, dbProvider: "none", includeJwt: false, includeDocker: true } }),
+      outDir
+    );
+    const dockerfile = readFileSync(path.join(outDir, "Dockerfile"), "utf-8");
+    expect(dockerfile).toContain("RUN mvn -pl snapapp-api -am clean package -DskipTests");
+    expect(dockerfile).toContain("COPY --from=build /build/snapapp-api/target/*.jar app.jar");
+  });
+
+  it("single-module Dockerfile builds the whole project, with no -pl target", async () => {
+    const outDir = path.join(tmpDir, "out");
+    await springbootAdapter.generate(
+      baseConfig({ addons: { structure: "package-by-layer", isFourLayer: false, dbProvider: "none", includeJwt: false, includeDocker: true } }),
+      outDir
+    );
+    const dockerfile = readFileSync(path.join(outDir, "Dockerfile"), "utf-8");
+    expect(dockerfile).toContain("RUN mvn clean package -DskipTests");
+    expect(dockerfile).not.toContain("-pl");
+    expect(dockerfile).toContain("COPY --from=build /build/target/*.jar app.jar");
   });
 });
