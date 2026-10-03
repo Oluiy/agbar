@@ -8,6 +8,11 @@ export function renderArchitectureDoc(projectName: string, decisions: Decision[]
     return `${intro}\nNo callouts for this configuration.\n`;
   }
 
-  const sections = decisions.map((d) => `## ${d.title}\n\n**Principle:** ${d.principle}\n\n${d.explanation}\n`).join("\n");
+  const sections = decisions
+    .map((d) => {
+      const goDeeper = d.conceptId ? `\nGo deeper: \`buildquick concepts ${d.conceptId}\`\n` : "";
+      return `## ${d.title}\n\n**Principle:** ${d.principle}\n\n${d.explanation}\n${goDeeper}`;
+    })
+    .join("\n");
   return `${intro}\n${sections}`;
 }

@@ -26,15 +26,17 @@ export interface Decision {
   principle: string;
   explanation: string;
   appliesTo: (ctx: DecisionContext) => boolean;
+  /**
+   * A concept from concepts.ts that goes deeper on this decision, closing the
+   * loop between "here's why your generated code looks like this" and the
+   * wider concept behind it. Only set where the mapping is genuinely direct -
+   * most decisions have no honest match, and a forced one would be noise.
+   */
+  conceptId?: string;
 }
 
 /** Reads whatever a stack's own addons bag happens to expose, without assuming every stack provides the same shape. */
-export function buildDecisionContext(
-  stack: string,
-  addons: Record<string, unknown>,
-  includeTests: boolean,
-  isMicroservice: boolean
-): DecisionContext {
+export function buildDecisionContext(stack: string, addons: Record<string, unknown>, includeTests: boolean, isMicroservice: boolean): DecisionContext {
   const dbProvider = typeof addons.dbProvider === "string" ? addons.dbProvider : "none";
   return {
     stack,
@@ -55,6 +57,7 @@ const DECISIONS: Decision[] = [
     explanation:
       "HealthController's constructor takes a HealthService - the interface - not HealthServiceImpl directly. Spring resolves the real @Service bean at runtime through constructor injection. Swap HealthServiceImpl for a different implementation, or a fake in a test, and HealthController never changes. That's DIP: depend on an abstraction, not the concrete thing behind it.",
     appliesTo: (ctx) => ctx.stack === "springboot",
+    conceptId: "dependency-inversion",
   },
   {
     id: "springboot-structure-multi-module",
@@ -63,6 +66,7 @@ const DECISIONS: Decision[] = [
     explanation:
       "Multi-Module structure makes the domain -> application -> infrastructure -> api dependency direction physical, not just a convention. Each layer's pom.xml only lists the modules it's allowed to depend on - domain lists none of the others; api depends on application and infrastructure. Try to import an infrastructure class from domain and the project won't compile - Maven enforces the boundary a code reviewer would otherwise have to catch by eye.",
     appliesTo: (ctx) => ctx.stack === "springboot" && ctx.structure === "multi-module",
+    conceptId: "separation-of-concerns",
   },
   {
     id: "springboot-structure-package-by-layer",
@@ -87,6 +91,7 @@ const DECISIONS: Decision[] = [
     explanation:
       "AuthServiceImpl only issues tokens (POST /api/auth/token). JwtAuthFilter only validates tokens already presented on incoming requests. Each class has exactly one reason to change - signing logic changes, or verification logic changes, never both at once - and a bug in one can't hide inside the other.",
     appliesTo: (ctx) => ctx.stack === "springboot" && ctx.includeJwt,
+    conceptId: "single-responsibility",
   },
   {
     id: "springboot-config-layering",
@@ -95,6 +100,7 @@ const DECISIONS: Decision[] = [
     explanation:
       "application.yml holds everything that's the same everywhere. application-dev.yml and application-prod.yml only override what actually differs per environment (datasource URL, logging level) - they don't repeat the shared structure. Switch which one loads with a single Spring profile, instead of maintaining two full copies of the same file that quietly drift apart.",
     appliesTo: (ctx) => ctx.stack === "springboot",
+    conceptId: "dry-principle",
   },
   {
     id: "springboot-docker-multistage",
@@ -103,6 +109,7 @@ const DECISIONS: Decision[] = [
     explanation:
       "The Maven build tools, source code, and full dependency tree exist only in the first stage. The final image copies out just the compiled jar and runs it on a slim JRE - none of the build-time weight ships to production. If you've only ever seen a single-stage Dockerfile, this is why real ones rarely look like that.",
     appliesTo: (ctx) => ctx.stack === "springboot" && ctx.includeDocker,
+    conceptId: "separation-of-concerns",
   },
   {
     id: "springboot-test-no-real-db",
@@ -119,6 +126,7 @@ const DECISIONS: Decision[] = [
     explanation:
       "Every service under services/ has its own pom.xml, own package, own build - nothing shared at runtime. The root pom.xml is only a Maven reactor, a convenience for building everything in one command locally; it isn't a dependency any service actually needs to run. Deploy, scale, or rewrite one service without touching the others.",
     appliesTo: (ctx) => ctx.stack === "springboot" && ctx.isMicroservice,
+    conceptId: "coupling-and-cohesion",
   },
   {
     id: "aspnetcore-service-interface-pattern",
@@ -127,6 +135,7 @@ const DECISIONS: Decision[] = [
     explanation:
       "BuildQuickPkg's Controller-style output puts interfaces in Services/Interfaces and implementations in Services/Implementation, registered against the interface in Program.cs (builder.Services.AddScoped<IXService, XService>()). Controllers depend on the interface type, never the concrete class - the same DIP pattern as the Spring Boot output, so switching stacks doesn't mean relearning the underlying idea. (Aggregator hands off to BuildQuickPkg's own interactive prompts, so it can't see which exact options you chose there - this callout is general, not tied to your specific run.)",
     appliesTo: (ctx) => ctx.stack === "aspnetcore",
+    conceptId: "dependency-inversion",
   },
 ];
 

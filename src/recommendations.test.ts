@@ -74,12 +74,7 @@ describe("getRecommendations", () => {
   });
 
   it("always sorts results essential -> production -> scale", () => {
-    const ctx = buildRecommendationContext(
-      "springboot",
-      { dbProvider: "postgres", includeDocker: true },
-      true,
-      true
-    );
+    const ctx = buildRecommendationContext("springboot", { dbProvider: "postgres", includeDocker: true }, true, true);
     const tiers = getRecommendations(ctx).map((r) => r.tier);
     const essentialLast = tiers.lastIndexOf("essential");
     const productionFirst = tiers.indexOf("production");

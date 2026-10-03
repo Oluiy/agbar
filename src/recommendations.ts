@@ -33,12 +33,7 @@ export interface RecommendationContext {
 }
 
 /** Reads whatever a stack's own addons bag happens to expose, without assuming every stack provides the same shape. */
-export function buildRecommendationContext(
-  stack: string,
-  addons: Record<string, unknown>,
-  includeTests: boolean,
-  usesLlmApi: boolean
-): RecommendationContext {
+export function buildRecommendationContext(stack: string, addons: Record<string, unknown>, includeTests: boolean, usesLlmApi: boolean): RecommendationContext {
   const dbProvider = typeof addons.dbProvider === "string" ? addons.dbProvider : "none";
   return {
     stack,
@@ -128,7 +123,5 @@ const RECOMMENDATIONS: Recommendation[] = [
 /** Every recommendation whose trigger condition matches the given context, grouped by tier in essential -> production -> scale order. */
 export function getRecommendations(ctx: RecommendationContext): Recommendation[] {
   const tierOrder: RecommendationTier[] = ["essential", "production", "scale"];
-  return RECOMMENDATIONS.filter((r) => r.appliesTo(ctx)).sort(
-    (a, b) => tierOrder.indexOf(a.tier) - tierOrder.indexOf(b.tier)
-  );
+  return RECOMMENDATIONS.filter((r) => r.appliesTo(ctx)).sort((a, b) => tierOrder.indexOf(a.tier) - tierOrder.indexOf(b.tier));
 }

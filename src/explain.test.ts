@@ -7,12 +7,7 @@ function ids(ctx: ReturnType<typeof buildDecisionContext>): string[] {
 
 describe("buildDecisionContext", () => {
   it("reads structure/dbProvider/includeJwt/includeDocker off an addons bag that has them", () => {
-    const ctx = buildDecisionContext(
-      "springboot",
-      { structure: "multi-module", dbProvider: "postgres", includeJwt: true, includeDocker: true },
-      true,
-      false
-    );
+    const ctx = buildDecisionContext("springboot", { structure: "multi-module", dbProvider: "postgres", includeJwt: true, includeDocker: true }, true, false);
     expect(ctx).toEqual({
       stack: "springboot",
       structure: "multi-module",
@@ -39,11 +34,7 @@ describe("buildDecisionContext", () => {
 describe("getDecisions", () => {
   it("gives a bare package-by-layer springboot project the interface/DIP and config-layering callouts, nothing addon-gated", () => {
     const ctx = buildDecisionContext("springboot", { structure: "package-by-layer" }, false, false);
-    expect(ids(ctx)).toEqual([
-      "springboot-controller-depends-on-interface",
-      "springboot-structure-package-by-layer",
-      "springboot-config-layering",
-    ]);
+    expect(ids(ctx)).toEqual(["springboot-controller-depends-on-interface", "springboot-structure-package-by-layer", "springboot-config-layering"]);
   });
 
   it("only the matching structure-mode callout appears, never more than one", () => {
@@ -98,12 +89,7 @@ describe("getDecisions", () => {
   });
 
   it("a fully-loaded springboot config surfaces every applicable callout with no duplicates", () => {
-    const ctx = buildDecisionContext(
-      "springboot",
-      { structure: "multi-module", dbProvider: "postgres", includeJwt: true, includeDocker: true },
-      true,
-      true
-    );
+    const ctx = buildDecisionContext("springboot", { structure: "multi-module", dbProvider: "postgres", includeJwt: true, includeDocker: true }, true, true);
     const result = ids(ctx);
     expect(new Set(result).size).toBe(result.length);
     expect(result).toEqual(

@@ -1,10 +1,55 @@
 import { describe, expect, it } from "vitest";
-import { BACKEND_CONCEPTS } from "./concepts.js";
+import { BACKEND_CONCEPTS } from "./concepts/index.js";
 import { renderLevelingUpDoc } from "./conceptsRender.js";
+import { RULES } from "./check/rules.js";
+import { loadUnits } from "./learn/loader.js";
 
 describe("BACKEND_CONCEPTS", () => {
-  it("has exactly the 27 concepts every backend engineer eventually needs", () => {
-    expect(BACKEND_CONCEPTS).toHaveLength(27);
+  it("has exactly the 76 concepts: 41 backend concepts plus 35 small traps", () => {
+    expect(BACKEND_CONCEPTS).toHaveLength(76);
+  });
+
+  it("every 'practise it' command points at a lesson unit that really exists", () => {
+    for (const c of BACKEND_CONCEPTS.filter((x) => x.practice)) {
+      const m = /^buildquick learn (\S+) (\S+)$/.exec(c.practice!);
+      expect(m, `${c.id}: practice must be 'buildquick learn <language> <unit-id>'`).not.toBeNull();
+      const ids = loadUnits(m![1]).map((u) => u.id);
+      expect(ids, `${c.id}: no unit '${m![2]}' in ${m![1]}`).toContain(m![2]);
+    }
+  });
+
+  it("every concept has a code example - a glossary teaches words, an example teaches the thing", () => {
+    expect(BACKEND_CONCEPTS.filter((c) => !c.example).map((c) => c.id)).toEqual([]);
+  });
+
+  it("every JavaScript example at least parses - a typo in teaching code teaches the typo", () => {
+    // Constructing an AsyncFunction parses the body without running it - in
+    // process, so no child processes to time out under a busy test run.
+    const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor as new (body: string) => unknown;
+    const jsExamples = BACKEND_CONCEPTS.filter((c) => c.example && /^(\/\/|const |import |app\.|if |process\.|async |for |await )/.test(c.example));
+    expect(jsExamples.length).toBeGreaterThan(15);
+    for (const c of jsExamples) {
+      // Snippets are fragments: wrap them in an async function so a top-level
+      // `return` or `await` parses, and drop imports, which can't live in one.
+      // Some examples compare languages (JS, then Go, then Python). Only the JS
+      // part is JS: stop at the first "// Go" / "# Python" style section header.
+      const lines = c.example!.split("\n");
+      const otherLanguage = lines.findIndex((l) => /^(\/\/|#) ?(Go|Python|C#|Java|Rust)\b/.test(l));
+      const body = (otherLanguage === -1 ? lines : lines.slice(0, otherLanguage))
+        .filter((l) => !/^import /.test(l))
+        .map((l) => l.replace(/^export /, ""))
+        .join("\n");
+      try {
+        new AsyncFunction(`"use strict";\n${body}`);
+      } catch (err) {
+        throw new Error(`${c.id}: example doesn't parse - ${(err as Error).message}`);
+      }
+    }
+  });
+
+  it("every concept a check finding links to is among them - that's where a beginner lands", () => {
+    const ids = new Set(BACKEND_CONCEPTS.map((c) => c.id));
+    expect(RULES.map((r) => r.conceptId).filter((id) => !ids.has(id))).toEqual([]);
   });
 
   it("every concept has a unique id and every field filled in", () => {
@@ -18,37 +63,124 @@ describe("BACKEND_CONCEPTS", () => {
     }
   });
 
-  it("covers idempotency, indexing, caching, queues, retries, DLQs, circuit breakers, reconciliation, and CAP theorem", () => {
-    const ids = BACKEND_CONCEPTS.map((c) => c.id);
-    expect(ids).toEqual([
-      "idempotency-keys",
-      "database-indexing",
-      "caching",
-      "message-queues",
-      "retry-mechanisms",
-      "dead-letter-queues",
-      "circuit-breakers",
-      "reconciliation",
-      "cap-theorem",
-      "statelessness",
-      "connection-pooling",
-      "security-by-design",
-      "observability",
-      "api-versioning",
-      "communication-patterns",
-      "choosing-the-datastore",
-      "rate-limiting",
-      "replication",
-      "secrets-management",
-      "pagination",
-      "n-plus-one-queries",
-      "distributed-locks",
-      "concurrency-control",
-      "backpressure",
-      "bulkhead-pattern",
-      "backups-vs-replication",
-      "multi-tenancy",
-    ]);
+  // Membership, not order: concepts are grouped into themed files under
+  // src/concepts/, so the array order follows those groups rather than the order
+  // they happened to be written in. What must stay stable is that every one of
+  // them is still present.
+  it("covers every concept, from idempotency and indexing through to the structural set", () => {
+    const ids = [...BACKEND_CONCEPTS.map((c) => c.id)].sort();
+    expect(ids).toEqual(
+      [
+        "idempotency-keys",
+        "database-indexing",
+        "caching",
+        "message-queues",
+        "retry-mechanisms",
+        "timeouts",
+        "dead-letter-queues",
+        "circuit-breakers",
+        "reconciliation",
+        "cap-theorem",
+        "statelessness",
+        "connection-pooling",
+        "security-by-design",
+        "observability",
+        "api-versioning",
+        "communication-patterns",
+        "choosing-the-datastore",
+        "rate-limiting",
+        "replication",
+        "secrets-management",
+        "dependency-inversion",
+        "single-responsibility",
+        "separation-of-concerns",
+        "coupling-and-cohesion",
+        "dry-principle",
+        "pagination",
+        "n-plus-one-queries",
+        "distributed-locks",
+        "concurrency-control",
+        "backpressure",
+        "bulkhead-pattern",
+        "backups-vs-replication",
+        "multi-tenancy",
+        "microservices-vs-monolith",
+        "cache-warming",
+        "cache-stampede",
+        "transactional-outbox",
+        "saga-pattern",
+        "schema-migrations",
+        "graceful-shutdown",
+        "feature-flags",
+        // Small traps: text, numbers, time (trapsData.ts)
+        "unicode-normalization",
+        "string-length",
+        "locale-case-mapping",
+        "invisible-characters",
+        "regex-anchoring",
+        "redos",
+        "floating-point-money",
+        "big-integer-ids",
+        "integer-overflow",
+        "nan-and-infinity",
+        "rounding-modes",
+        "falsy-zero",
+        "monotonic-clocks",
+        "daylight-saving-time",
+        "week-based-year",
+        "leap-days",
+        // Small traps: HTTP, SQL, runtime, input, files, serialization (trapsSystems.ts)
+        "http-method-semantics",
+        "socket-exhaustion",
+        "dns-caching",
+        "spreading-built-in-objects",
+        "sql-null-logic",
+        "collation-uniqueness",
+        "deadlock-lock-order",
+        "captive-dependencies",
+        "disposable-leaks",
+        "non-atomic-updates",
+        "sync-over-async",
+        "mass-assignment",
+        "timing-attacks",
+        "ssrf",
+        "path-traversal",
+        "atomic-file-writes",
+        "filesystem-case-sensitivity",
+        "file-descriptor-leaks",
+        "schema-evolution",
+      ].sort()
+    );
+  });
+
+  it("puts the design concepts first, since structure decides whether the rest can be changed later", () => {
+    expect(BACKEND_CONCEPTS[0].category).toBe("Design");
+  });
+
+  it("every reference is a real https URL with a title, not a bare link", () => {
+    for (const c of BACKEND_CONCEPTS) {
+      for (const ref of c.references ?? []) {
+        expect(ref.title.length, `${c.id} has an untitled reference`).toBeGreaterThan(0);
+        expect(ref.url, `${c.id} reference '${ref.title}' isn't https`).toMatch(/^https:\/\//);
+      }
+    }
+  });
+
+  // whenToUse exists to carry a real judgement call. A one-liner that just
+  // restates the fix is filler, and filler is what makes people stop reading.
+  it("every whenToUse that exists is substantive, not a restatement of the fix", () => {
+    for (const c of BACKEND_CONCEPTS) {
+      if (!c.whenToUse) continue;
+      expect(c.whenToUse.length, `${c.id}'s whenToUse is too short to say anything`).toBeGreaterThan(80);
+      expect(c.whenToUse, `${c.id}'s whenToUse just repeats its fix`).not.toBe(c.fix);
+    }
+  });
+
+  it("the concepts that are pure decisions actually carry a whenToUse", () => {
+    const decisionConcepts = ["microservices-vs-monolith", "cache-warming", "cache-stampede", "rate-limiting", "saga-pattern"];
+    for (const id of decisionConcepts) {
+      expect(BACKEND_CONCEPTS.find((c) => c.id === id)?.whenToUse, `${id} has no whenToUse`).toBeTruthy();
+    }
   });
 });
 

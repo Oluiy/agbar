@@ -1,5 +1,7 @@
 import pc from "picocolors";
-import { BACKEND_CONCEPTS, type Concept } from "./concepts.js";
+import { codeBlock, emphasize } from "./terminalText.js";
+import { command, dim, heading, label, name, nextStep, path, tag } from "./ui/palette.js";
+import { BACKEND_CONCEPTS, type Concept } from "./concepts/index.js";
 
 /**
  * Powers `buildquick concepts` - a standalone glossary command, independent of
@@ -10,10 +12,7 @@ import { BACKEND_CONCEPTS, type Concept } from "./concepts.js";
  * away, any time, with no project required.
  */
 
-export type ConceptLookup =
-  | { kind: "match"; concept: Concept }
-  | { kind: "ambiguous"; candidates: Concept[] }
-  | { kind: "none" };
+export type ConceptLookup = { kind: "match"; concept: Concept } | { kind: "ambiguous"; candidates: Concept[] } | { kind: "none" };
 
 /**
  * Exact id/title match always wins outright - it can never be ambiguous.
@@ -31,6 +30,17 @@ export function lookupConcept(query: string): ConceptLookup {
   const partial = BACKEND_CONCEPTS.filter((c) => c.title.toLowerCase().includes(q) || c.id.includes(qDashed));
   if (partial.length === 1) return { kind: "match", concept: partial[0] };
   if (partial.length > 1) return { kind: "ambiguous", candidates: partial };
+
+  // Nothing in a title: search what the concepts say, so a plain word works -
+  // "concepts money" finds float money, rounding and big IDs. Ranked by how
+  // often the word appears, most relevant first.
+  const word = new RegExp(`\\b${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "gi");
+  const hits = BACKEND_CONCEPTS.map((c) => ({ c, n: `${c.category} ${c.failureScenario} ${c.fix} ${c.example ?? ""}`.match(word)?.length ?? 0 }))
+    .filter((h) => h.n > 0)
+    .sort((a, b) => b.n - a.n)
+    .map((h) => h.c);
+  if (hits.length === 1) return { kind: "match", concept: hits[0] };
+  if (hits.length > 1) return { kind: "ambiguous", candidates: hits.slice(0, 8) };
   return { kind: "none" };
 }
 
@@ -42,37 +52,60 @@ export function printConceptsList(): void {
     byCategory.set(c.category, list);
   }
 
-  console.log(pc.bold(`\n${BACKEND_CONCEPTS.length} backend concepts - the stuff tutorials skip:\n`));
+  console.log(`\n${heading("Concepts")} ${dim(`${BACKEND_CONCEPTS.length} across ${byCategory.size} topics - the stuff tutorials skip`)}`);
+  console.log(`${label("Quicker:")} search with one word - ${command("buildquick concepts money")}  ${command("buildquick concepts timeout")}\n`);
   for (const [category, items] of byCategory) {
-    console.log(pc.cyan(pc.bold(category)));
+    console.log(`${pc.bold(category)} ${dim(`(${items.length})`)}`);
+    // The id is what you type to open it - so it's the coloured column, lined up.
+    const width = Math.max(...items.map((c) => c.title.length));
     for (const c of items) {
-      console.log(`  ${pc.bold(c.title)} ${pc.dim(`(${c.id})`)}`);
+      console.log(`  ${c.title.padEnd(width)}  ${command(c.id)}`);
     }
     console.log("");
   }
-  console.log(pc.dim("Run 'buildquick concepts <name>' for the full explanation, e.g. 'buildquick concepts rate limiting'."));
+  console.log(nextStep("open one:", "buildquick concepts <id>"));
 }
 
 export function printConceptDetail(query: string): void {
   const result = lookupConcept(query);
 
   if (result.kind === "none") {
-    console.error(pc.red(`No concept matches '${query}'. Run 'buildquick concepts' to see the full list.`));
+    console.error(pc.red(`Nothing about '${query}' yet.`) + ` Try a different word, or ${command("buildquick concepts")} to browse everything.`);
     process.exitCode = 1;
     return;
   }
 
+  // Several matches is a search result, not a mistake - list them with the
+  // exact command to open each, so there's nothing to work out.
   if (result.kind === "ambiguous") {
-    console.error(pc.yellow(`'${query}' matches more than one concept - be more specific:`));
+    console.log(`\n${heading(`${result.candidates.length} concepts about '${query}'`)}\n`);
     for (const c of result.candidates) {
-      console.error(`  ${c.title} (${c.id})`);
+      console.log(`  ${name(c.title)} ${tag(`[${c.category}]`)}\n  ${command(`buildquick concepts ${c.id}`)}\n`);
     }
-    process.exitCode = 1;
     return;
   }
 
   const { concept } = result;
-  console.log(`\n${pc.bold(concept.title)} ${pc.dim(`[${concept.category}]`)}\n`);
-  console.log(`${pc.yellow("Where this bites you:")} ${concept.failureScenario}\n`);
-  console.log(`${pc.green("The fix:")} ${concept.fix}\n`);
+  // One palette (ui/palette.ts): red = what goes wrong, green = what to do, the
+  // judgement call stands out, code is a headed block. Every section has a bold
+  // heading, so the structure survives a terminal with no colour at all.
+  console.log(`\n${heading(concept.title)}`);
+  console.log(`${tag(`[${concept.category}]`)}\n`);
+  console.log(`${pc.bold(pc.red("Where this bites you"))}\n${emphasize(concept.failureScenario)}\n`);
+  console.log(`${pc.bold(pc.green("The fix"))}\n${emphasize(concept.fix)}\n`);
+
+  // Only printed when the concept actually has a judgement call in it - most
+  // don't, and an empty "when to use" heading would be worse than no heading.
+  if (concept.whenToUse) console.log(`${pc.bold(pc.magenta("When to reach for it"))}\n${emphasize(concept.whenToUse)}\n`);
+
+  if (concept.example) console.log(`${heading("In code")}\n\n${codeBlock(concept.example)}\n`);
+
+  if (concept.references?.length) {
+    console.log(heading("Read more"));
+    for (const ref of concept.references) console.log(`  ${ref.title}\n  ${path(ref.url)}`);
+    console.log("");
+  }
+
+  // Every screen ends on one next step: practise it if a lesson exists, else keep browsing.
+  console.log(concept.practice ? nextStep("practise it:", concept.practice) : nextStep("browse more:", "buildquick concepts"));
 }

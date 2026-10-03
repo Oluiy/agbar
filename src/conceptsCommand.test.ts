@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { lookupConcept } from "./conceptsCommand.js";
 
 describe("lookupConcept", () => {
+  it("finds a concept by a word that's only in its explanation, not its title", () => {
+    const result = lookupConcept("timezone");
+    expect(result.kind === "match" && result.concept.id).toBe("daylight-saving-time");
+  });
+
   it("matches by exact id", () => {
     const result = lookupConcept("rate-limiting");
     expect(result.kind).toBe("match");
