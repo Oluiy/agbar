@@ -1,0 +1,148 @@
+name: Verify generated projects
+
+# Proves that the projects buildquick generates actually install, typecheck, test and
+# build - not just that the file tree looks right. It runs:
+#   - on every PR that touches a stack (including Renovate's version-bump PRs),
+#   - weekly, because caret ranges pick up new upstream minors at install time even when
+#     nothing here changed - this is what catches an upstream release breaking a scaffold,
+#   - on demand.
+on:
+  pull_request:
+    paths:
+      - "src/stacks/**"
+      - "scripts/generate-scaffold.ts"
+      - ".github/workflows/scaffold-verify.yml"
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: ${{ matrix.stack }} / ${{ matrix.addons }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Each ORM on SQLite, plus a live server and the Docker image (sqlite needs no server).
+          - { stack: express, addons: '{"structure":"layered","orm":"prisma","db":"sqlite","includeDocker":true}', docker: true }
+          - { stack: fastify, addons: '{"structure":"clean","orm":"prisma","db":"sqlite","includeDocker":true}', docker: true }
+          - { stack: express, addons: '{"structure":"layered","orm":"drizzle","db":"sqlite","includeDocker":true}', docker: true }
+          - { stack: fastify, addons: '{"structure":"clean","orm":"typeorm","db":"sqlite","includeDocker":true}', docker: true }
+          - { stack: express, addons: '{"structure":"clean","orm":"sequelize","db":"sqlite","includeDocker":true}', docker: true }
+          - { stack: fastify, addons: '{"structure":"layered","orm":"none","db":"sqlite","includeDocker":true}', docker: true }
+          # PostgreSQL: the repository tests run for real against the service container.
+          - { stack: express, addons: '{"structure":"layered","orm":"prisma","db":"postgres"}', postgres: true }
+          - { stack: fastify, addons: '{"structure":"layered","orm":"drizzle","db":"postgres"}', postgres: true }
+          - { stack: express, addons: '{"structure":"clean","orm":"typeorm","db":"postgres"}', postgres: true }
+          - { stack: fastify, addons: '{"structure":"clean","orm":"sequelize","db":"postgres"}', postgres: true }
+          # NestJS: unit tests, plus the e2e suite against a real database.
+          - { stack: nestjs, addons: '{"structure":"modular","orm":"prisma","db":"sqlite","includeDocker":true}', docker: true, nest: true }
+          - { stack: nestjs, addons: '{"structure":"clean","orm":"prisma","db":"sqlite"}', nest: true }
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: verify_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d verify_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+
+    env:
+      PROJECT: ${{ github.workspace }}/../generated/Verify
+      # Stall timeouts: without them a hung transfer waits for the job timeout.
+      npm_config_fetch_timeout: "30000"
+      npm_config_fetch_retries: "8"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # The generated projects' own requirement (vitest 5, NestJS 12).
+          node-version: 24
+
+      - name: Install buildquick
+        run: npm ci
+
+      - name: Generate the project
+        run: npx tsx scripts/generate-scaffold.ts ${{ matrix.stack }} "$PROJECT" '${{ matrix.addons }}'
+
+      - name: Point the tests at the PostgreSQL service
+        if: matrix.postgres
+        run: echo "TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/verify_test" >> "$GITHUB_ENV"
+
+      - name: Install the generated project
+        working-directory: ${{ env.PROJECT }}
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        working-directory: ${{ env.PROJECT }}
+        run: ${{ matrix.nest && 'npx tsc --noEmit -p tsconfig.json' || 'npm run typecheck' }}
+
+      - name: Test
+        working-directory: ${{ env.PROJECT }}
+        run: npm test
+
+      - name: End-to-end tests (NestJS, real SQLite database)
+        if: matrix.nest
+        working-directory: ${{ env.PROJECT }}
+        run: npm run test:e2e
+
+      - name: Build
+        working-directory: ${{ env.PROJECT }}
+        run: npm run build
+
+      - name: Build the Docker image and check /health
+        if: matrix.docker
+        working-directory: ${{ env.PROJECT }}
+        run: |
+          docker build -t verify:ci .
+          # Liveness never touches the database, so a fresh SQLite file is enough here.
+          docker run -d --name verify -p 3000:3000 \
+            -e PORT=3000 -e DATABASE_URL=file:/tmp/verify.db verify:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/health; then echo; exit 0; fi
+            sleep 2
+          done
+          echo "container never answered /health"; docker logs verify; exit 1
+
+  # The hand-written Spring Boot POM (multi-module, or Initializr unreachable) carries pinned
+  # versions - Renovate bumps them, and this proves a project builds against the new ones.
+  # useInitializr stays off: the whole point is to exercise the pins, not Spring's service.
+  verify-spring:
+    name: springboot / ${{ matrix.addons }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { addons: '{"structure":"package-by-layer","dbProvider":"postgres","includeJwt":true,"includeDocker":false}' }
+          - { addons: '{"structure":"multi-module","isFourLayer":true,"dbProvider":"postgres","includeJwt":true,"includeDocker":false}' }
+    env:
+      PROJECT: ${{ github.workspace }}/../generated/Verify
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - run: npm ci
+      - name: Generate the project
+        run: npx tsx scripts/generate-scaffold.ts springboot "$PROJECT" '${{ matrix.addons }}'
+      - name: Build and test
+        working-directory: ${{ env.PROJECT }}
+        run: ./mvnw -B -ntp verify
