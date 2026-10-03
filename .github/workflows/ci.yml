@@ -1,0 +1,94 @@
+name: CI
+
+# buildquick's own typecheck, lint and tests. scaffold-verify.yml proves the projects
+# buildquick *generates* work; this proves buildquick itself does, and it is the gate that
+# would catch a broken `check` rule before it merges.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to the same branch makes the previous run's answer irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # The range vitest 4 supports (^20 || ^22 || >=24). The lowest entry is what the
+        # test suite is actually guaranteed on; `engines` in package.json is a separate
+        # claim about the *published CLI*, checked by the runtime-engines job below.
+        node: [20, 22, 24]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      # The Rust lesson tests are `describe.skipIf(!CARGO_AVAILABLE)`, so without cargo they
+      # vanish and the suite still reports success with four fewer tests. Failing here makes
+      # a shrinking suite loud instead of silent.
+      - name: Require the cargo toolchain the Rust lesson tests need
+        run: cargo --version
+
+      # Separate steps rather than `npm run verify`, so a red check names the failure.
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      # tsup can fail where tsc passes (bundling, entry resolution), and dist/ is what users get.
+      - run: npm run build
+
+      # `check` exits 0 whether or not it finds anything (it reports, it does not gate), so
+      # these catch a CLI that crashes or fails to load its content - not a new finding.
+      - name: Check the built CLI actually starts
+        run: |
+          node dist/cli.js --version
+          node dist/cli.js concepts timeouts > /dev/null
+          node dist/cli.js check . > /dev/null
+
+  runtime-engines:
+    name: published CLI runs on the declared minimum Node
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build with a supported Node (the dev toolchain needs 20+)...
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      # ...then run the artifact on the oldest Node `engines` promises, with production
+      # dependencies only - exactly what `npm install -g buildquick` gives a user. If this
+      # fails, `engines` is a false promise and must be raised, not worked around.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install production dependencies only
+        run: npm ci --omit=dev --ignore-scripts
+      - name: Smoke-test the CLI
+        run: |
+          node --version
+          node dist/cli.js --version
+          node dist/cli.js concepts pagination > /dev/null
+          node dist/cli.js cron "30 9 * * 1-5" > /dev/null
+          node dist/cli.js check . > /dev/null
