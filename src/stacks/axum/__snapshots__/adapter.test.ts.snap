@@ -1,0 +1,58 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`axumAdapter.generate - file tree > clean + postgres - splits domain, application, infrastructure and api 1`] = `
+[
+  ".env.example",
+  ".gitignore",
+  "ARCHITECTURE.md",
+  "Cargo.toml",
+  "README.md",
+  "migrations/0001_create_items.sql",
+  "src/api/handlers.rs",
+  "src/api/mod.rs",
+  "src/application/mod.rs",
+  "src/application/service.rs",
+  "src/config.rs",
+  "src/db.rs",
+  "src/domain/item.rs",
+  "src/domain/mod.rs",
+  "src/domain/repository.rs",
+  "src/error.rs",
+  "src/health.rs",
+  "src/infrastructure/mod.rs",
+  "src/infrastructure/sqlx_repository.rs",
+  "src/lib.rs",
+  "src/main.rs",
+  "src/middleware.rs",
+  "src/state.rs",
+  "tests/api.rs",
+]
+`;
+
+exports[`axumAdapter.generate - file tree > layered + sqlite + docker 1`] = `
+[
+  ".env.example",
+  ".gitignore",
+  "ARCHITECTURE.md",
+  "Cargo.toml",
+  "Dockerfile",
+  "README.md",
+  "docker-compose.yml",
+  "migrations/0001_create_items.sql",
+  "src/config.rs",
+  "src/db.rs",
+  "src/error.rs",
+  "src/health.rs",
+  "src/items/entity.rs",
+  "src/items/handlers.rs",
+  "src/items/mod.rs",
+  "src/items/repository.rs",
+  "src/items/service.rs",
+  "src/items/sqlx_repository.rs",
+  "src/lib.rs",
+  "src/main.rs",
+  "src/middleware.rs",
+  "src/state.rs",
+  "tests/api.rs",
+]
+`;
