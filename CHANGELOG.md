@@ -6,7 +6,9 @@ All notable changes are recorded here. The format follows
 
 ## [Unreleased]
 
-First public release, `0.1.0`, once published to npm.
+## [0.1.0] - 2026-10-05
+
+First public release.
 
 ### Added
 
@@ -59,7 +61,13 @@ First public release, `0.1.0`, once published to npm.
 
 ### Quality
 
-- Precision is measured, not assumed: on nine open-source repos the rules had never seen,
-  the first run was 84% precise (27 of 32 findings correct). The five false positives were
-  fixed, each with a regression test that also proves the rule still catches the real case.
-  407 tests.
+- Precision is measured, not assumed, on open-source repos the rules had never seen: 84%
+  on a first batch of nine (27 of 32 findings correct) and 89% on a second batch of ten
+  (24 of 27), before fixing. Every false positive was fixed with a regression test that also
+  proves the rule still catches the real case, and both batches now guard against
+  regressions in a 37-repo corpus.
+- Generated projects are verified by running them, not by reading templates: CI generates
+  12 real projects, then installs, typechecks, tests, builds, builds the Docker image and
+  hits `/health`. Template version pins are kept current by Renovate.
+- 642 tests; typecheck, lint and tests run on Node 20, 22 and 24 for every change, and the
+  published CLI is smoke-tested on Node 18.

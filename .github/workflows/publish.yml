@@ -1,7 +1,16 @@
 name: Publish to npm
 
-# Publishes when a v* tag is pushed, so releasing is:
+# Publishes when a v* tag is pushed.
+#
+# First release (package.json is already 0.1.0 - do NOT run `npm version`, which would
+# bump it to 0.1.1 and skip 0.1.0):
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# Every release after that:
 #   npm version patch|minor|major && git push --follow-tags
+#
+# Before the first run: the repo must be PUBLIC (npm rejects --provenance from a private
+# repo), and an NPM_TOKEN repo secret must exist (or npm trusted publishing configured).
 on:
   push:
     tags:
@@ -23,9 +32,17 @@ jobs:
 
       - run: npm ci
 
-      # Rust isn't installed here, so the cargo-dependent checker tests skip
-      # themselves (see rustChecker.test.ts) rather than failing the release.
+      # Typecheck, lint and the full test suite. GitHub's ubuntu runners ship cargo, so the
+      # Rust lesson tests run here too (they skip only where cargo is missing).
       - run: npm run verify
+
+      # A tag must match package.json, or the published version and the tag disagree.
+      - name: Check the tag matches package.json
+        run: |
+          expected="v$(node -p 'require("./package.json").version')"
+          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version ($expected)"; exit 1
+          fi
 
       - run: npm run build
 
