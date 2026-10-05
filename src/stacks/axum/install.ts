@@ -1,5 +1,7 @@
-import { isAvailable, runCommand } from "../../utils/runCommand.js";
+import { isAvailable } from "../../utils/runCommand.js";
 import { tail } from "../../utils/text.js";
+import type { RunContext } from "../StackAdapter.js";
+import { stepRunner } from "../stepRunner.js";
 import type { VerifyResult } from "../verifyResult.js";
 
 /**
@@ -12,12 +14,14 @@ import type { VerifyResult } from "../verifyResult.js";
  *
  * Never throws: generation already succeeded, so a failure is something to report.
  */
-export async function installAndTest(projectDir: string): Promise<VerifyResult> {
+export async function installAndTest(projectDir: string, context: RunContext): Promise<VerifyResult> {
   if (!(await isAvailable("cargo", projectDir))) {
     return { detail: "cargo is not on PATH, so the project could not be verified here." };
   }
 
-  const tests = await runCommand("cargo", ["test", "--quiet"], projectDir, 1_800_000);
+  const tests = await stepRunner(context, projectDir)("compiling and running the tests (the first build is the slow one)", "cargo", ["test", "--quiet"], {
+    timeoutMs: 1_800_000,
+  });
   const output = `${tests.stdout}\n${tests.stderr}`;
 
   // A failed *build* and a failed *test* are different problems, and the user should

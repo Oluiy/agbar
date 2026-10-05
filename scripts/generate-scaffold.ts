@@ -7,6 +7,7 @@
  * testing are separate workflow steps, so a failure says which step broke.
  */
 import path from "node:path";
+import { noopContext } from "../src/stacks/StackAdapter.js";
 import { expressAdapter, fastifyAdapter } from "../src/stacks/node/adapter.js";
 import { nestjsAdapter } from "../src/stacks/nestjs/adapter.js";
 import { springbootAdapter } from "../src/stacks/springboot/adapter.js";
@@ -42,6 +43,7 @@ await adapter.generate(
     usesLlmApi: false,
     addons,
   },
-  outDir
+  outDir,
+  noopContext
 );
 console.log(`generated ${stack} ${JSON.stringify(addons)} -> ${outDir}`);

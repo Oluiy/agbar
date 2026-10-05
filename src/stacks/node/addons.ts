@@ -1,6 +1,6 @@
 import { confirm, select } from "@clack/prompts";
 import { checkCancel } from "../../utils/prompts.js";
-import { implementedOrms } from "./orms/index.js";
+import { implementedOrms, ormMenuOptions } from "./orms/index.js";
 import { NODE_DBS, NODE_ORMS, NODE_STRUCTURES, type NodeAddons, type NodeDb, type NodeFramework, type NodeOrm, type NodeStructure } from "./types.js";
 
 export async function promptNodeAddons(): Promise<Record<string, unknown>> {
@@ -17,10 +17,8 @@ export async function promptNodeAddons(): Promise<Record<string, unknown>> {
   const orm = checkCancel(
     await select({
       message: "ORM:",
-      options: [
-        { value: "prisma", label: "Prisma 7 (typed client, migrations)" },
-        { value: "none", label: "None (routes only)" },
-      ],
+      // Built from the plug-in registry, so a new ORM appears here the moment it exists.
+      options: ormMenuOptions(),
     })
   ) as NodeOrm;
 
@@ -38,7 +36,7 @@ export async function promptNodeAddons(): Promise<Record<string, unknown>> {
         ) as NodeDb);
 
   const includeDocker = checkCancel(await confirm({ message: "Add Dockerfile & docker-compose.yml?", initialValue: db === "postgres" && orm !== "none" }));
-  const install = checkCancel(await confirm({ message: "Run npm install and the tests now?", initialValue: true }));
+  const install = checkCancel(await confirm({ message: "Run npm install and the tests now? (takes minutes)", initialValue: false }));
 
   return { structure, orm, db, includeDocker, install } satisfies NodeAddons;
 }

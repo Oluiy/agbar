@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { ScaffoldConfig } from "../../config.js";
 import { writeFile } from "../../utils/fsWrite.js";
-import type { GenerateResult, StackAdapter } from "../StackAdapter.js";
+import type { StackAdapter } from "../StackAdapter.js";
 import { promptFastApiAddons, resolveFastApiAddons } from "./addons.js";
 import { installAndTest } from "./install.js";
 import { pathsFor } from "./layout.js";
@@ -30,7 +30,9 @@ export const fastapiAdapter: StackAdapter = {
   promptAddons: promptFastApiAddons,
   resolveAddons: resolveFastApiAddons,
 
-  async generate(config: ScaffoldConfig, outDir: string): Promise<GenerateResult> {
+  capabilities: { microservices: false, port: false },
+
+  async generate(config: ScaffoldConfig, outDir: string): Promise<void> {
     const addons = config.addons as unknown as FastApiAddons;
     const { structure, db, includeDocker } = addons;
     const paths = pathsFor(structure);
@@ -114,7 +116,14 @@ export const fastapiAdapter: StackAdapter = {
       write("Dockerfile", dockerfile(db));
       write("docker-compose.yml", dockerCompose(name, db));
     }
-
-    return { verify: addons.install ? await installAndTest(outDir) : undefined };
   },
+
+  verify: (_config, outDir, context) => installAndTest(outDir, context),
+
+  nextSteps: (config) => [
+    `cd ${config.projectName}`,
+    "uv sync --extra dev   (or: python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt)",
+    "uv run pytest",
+    "uv run uvicorn app.main:app --reload",
+  ],
 };

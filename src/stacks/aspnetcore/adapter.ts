@@ -39,6 +39,11 @@ export const aspnetcoreAdapter: StackAdapter = {
     return {};
   },
 
+  // BuildQuickPkg asks for its own architecture, port, tests and microservice choices.
+  capabilities: { microservices: false, port: false, tests: false },
+
+  nextSteps: (config) => [`cd ${config.projectName}`, "dotnet test", "dotnet run"],
+
   async generate(config: ScaffoldConfig): Promise<void> {
     if (!isBuildQuickPkgInstalled()) {
       throw new Error("BuildQuickPkg isn't installed. Run 'dotnet tool install --global BuildQuickPkg' first, then try again.");

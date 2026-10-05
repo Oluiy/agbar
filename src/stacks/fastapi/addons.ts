@@ -31,7 +31,7 @@ export async function promptFastApiAddons(): Promise<Record<string, unknown>> {
   ) as FastApiDb;
 
   const includeDocker = checkCancel(await confirm({ message: "Add Dockerfile & docker-compose.yml?", initialValue: db === "postgres" }));
-  const install = checkCancel(await confirm({ message: "Install dependencies and run the tests now?", initialValue: true }));
+  const install = checkCancel(await confirm({ message: "Install dependencies and run the tests now? (takes minutes)", initialValue: false }));
 
   return { structure, db, includeDocker, install } satisfies FastApiAddons;
 }

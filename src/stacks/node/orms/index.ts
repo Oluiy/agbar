@@ -17,6 +17,12 @@ export function ormPlugin(orm: NodeOrm): OrmPlugin | undefined {
   return PLUGINS[orm];
 }
 
+/** The interactive ORM menu: every registered plug-in by its own label, then "none". */
+export function ormMenuOptions(): { value: NodeOrm; label: string }[] {
+  const orms = Object.values(PLUGINS).map((plugin) => ({ value: plugin.id, label: plugin.label }));
+  return [...orms, { value: "none", label: "None (routes only)" }];
+}
+
 /** The ORMs that can actually be generated - derived from what is registered, so it cannot drift. */
 export function implementedOrms(): NodeOrm[] {
   return ["none", ...(Object.keys(PLUGINS) as NodeOrm[])];

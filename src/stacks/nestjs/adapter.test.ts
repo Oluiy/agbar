@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ScaffoldConfig } from "../../config.js";
+import { noopContext } from "../StackAdapter.js";
 import { nestjsAdapter } from "./adapter.js";
 import { resolveNestAddons } from "./addons.js";
 import { NEST_VERSIONS } from "./versions.js";
@@ -33,7 +34,8 @@ async function generate(addons: Record<string, unknown> = {}, overrides: Partial
       addons: { structure: "modular", orm: "prisma", db: "sqlite", includeDocker: false, install: false, ...addons },
       ...overrides,
     },
-    outDir
+    outDir,
+    noopContext
   );
   return outDir;
 }

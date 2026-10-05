@@ -3,8 +3,9 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { noopContext } from "../StackAdapter.js";
 import { expressAdapter, fastifyAdapter } from "./adapter.js";
-import { implementedOrms, ormPlugin } from "./orms/index.js";
+import { implementedOrms, ormMenuOptions, ormPlugin } from "./orms/index.js";
 import { NODE_VERSIONS } from "./versions.js";
 
 let tmpDir: string;
@@ -31,7 +32,8 @@ async function generate(orm: string, addons: Record<string, unknown> = {}, frame
       usesLlmApi: false,
       addons: { structure: "layered", orm, db: "sqlite", includeDocker: true, install: false, ...addons },
     },
-    outDir
+    outDir,
+    noopContext
   );
   return outDir;
 }
@@ -46,6 +48,17 @@ const code = (text: string) =>
     .split("\n")
     .filter((l) => !l.trim().startsWith("//") && !l.trim().startsWith("*") && !l.trim().startsWith("/*"))
     .join("\n");
+
+describe("the interactive ORM menu", () => {
+  it("offers every ORM that can be generated - it cannot lag the registry", () => {
+    expect(
+      ormMenuOptions()
+        .map((o) => o.value)
+        .sort()
+    ).toEqual([...implementedOrms()].sort());
+    expect(ormMenuOptions().map((o) => o.value)).toEqual(expect.arrayContaining(["prisma", "drizzle", "typeorm", "sequelize", "none"]));
+  });
+});
 
 describe("the ORM registry", () => {
   it("has a plug-in for every ORM it claims to generate, and none for 'none'", () => {

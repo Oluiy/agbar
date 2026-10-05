@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ScaffoldConfig } from "../../config.js";
+import { noopContext } from "../StackAdapter.js";
 import { fastapiAdapter } from "./adapter.js";
 import { resolveFastApiAddons } from "./addons.js";
 import { pathsFor } from "./layout.js";
@@ -36,7 +37,7 @@ function baseConfig(addons: Record<string, unknown>, overrides: Partial<Scaffold
 
 async function generate(addons: Record<string, unknown>, overrides: Partial<ScaffoldConfig> = {}): Promise<string> {
   const outDir = path.join(tmpDir, "out");
-  await fastapiAdapter.generate(baseConfig(addons, overrides), outDir);
+  await fastapiAdapter.generate(baseConfig(addons, overrides), outDir, noopContext);
   return outDir;
 }
 

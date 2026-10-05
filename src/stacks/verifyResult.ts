@@ -9,6 +9,8 @@ export interface VerifyResult {
   /** Undefined when nothing could be run at all (no toolchain), so the caller can say so honestly. */
   installed?: boolean;
   testsPassed?: boolean;
+  /** The user cancelled (Ctrl-C) mid-way. The generated files are intact; this is neither a pass nor a failure. */
+  cancelled?: boolean;
   /** How it was installed, for the report: "npm", "uv", "venv + pip". */
   via?: string;
   detail: string;

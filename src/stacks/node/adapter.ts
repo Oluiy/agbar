@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { ScaffoldConfig } from "../../config.js";
 import { writeFile } from "../../utils/fsWrite.js";
-import type { GenerateResult, StackAdapter } from "../StackAdapter.js";
+import type { StackAdapter } from "../StackAdapter.js";
 import { promptNodeAddons, resolveNodeAddons } from "./addons.js";
 import { installAndTest } from "./install.js";
 import { pathsFor } from "./layout.js";
@@ -42,7 +42,9 @@ function makeNodeAdapter(framework: NodeFramework, label: string): StackAdapter 
     promptAddons: promptNodeAddons,
     resolveAddons: (raw) => resolveNodeAddons(raw, framework),
 
-    async generate(config: ScaffoldConfig, outDir: string): Promise<GenerateResult> {
+    capabilities: { microservices: false, port: false },
+
+    async generate(config: ScaffoldConfig, outDir: string): Promise<void> {
       const addons = config.addons as unknown as NodeAddons;
       const { structure, orm, db, includeDocker } = addons;
       const paths = pathsFor(structure, orm);
@@ -97,9 +99,11 @@ function makeNodeAdapter(framework: NodeFramework, label: string): StackAdapter 
         write("Dockerfile", dockerfile(orm, db));
         write("docker-compose.yml", dockerCompose(name, orm, db));
       }
-
-      return { verify: addons.install ? await installAndTest(outDir) : undefined };
     },
+
+    verify: (_config, outDir, context) => installAndTest(outDir, context),
+
+    nextSteps: (config) => [`cd ${config.projectName}`, "npm install", "npm test", "npm run dev"],
   };
 }
 

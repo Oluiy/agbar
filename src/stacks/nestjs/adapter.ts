@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { ScaffoldConfig } from "../../config.js";
 import { writeFile } from "../../utils/fsWrite.js";
-import type { GenerateResult, StackAdapter } from "../StackAdapter.js";
+import type { StackAdapter } from "../StackAdapter.js";
 import { promptNestAddons, resolveNestAddons } from "./addons.js";
 import { bootstrapWithNestCli, mergePackageJson, removeCliDefaults } from "./bootstrap.js";
 import { NEST_VERSIONS } from "./versions.js";
@@ -50,7 +50,9 @@ export const nestjsAdapter: StackAdapter = {
   promptAddons: promptNestAddons,
   resolveAddons: resolveNestAddons,
 
-  async generate(config: ScaffoldConfig, outDir: string): Promise<GenerateResult> {
+  capabilities: { microservices: false, port: false },
+
+  async generate(config: ScaffoldConfig, outDir: string): Promise<void> {
     const addons = config.addons as unknown as NestAddons;
     const { structure, orm, db, includeDocker } = addons;
     const paths = pathsFor(structure);
@@ -130,7 +132,9 @@ export const nestjsAdapter: StackAdapter = {
       write("Dockerfile", dockerfile(orm, db));
       write("docker-compose.yml", dockerCompose(name, orm, db));
     }
-
-    return { verify: addons.install ? await installAndTest(outDir, orm) : undefined };
   },
+
+  verify: (config, outDir, context) => installAndTest(outDir, (config.addons as unknown as NestAddons).orm, context),
+
+  nextSteps: (config) => [`cd ${config.projectName}`, "npm install", "npm test", "npm run start:dev"],
 };

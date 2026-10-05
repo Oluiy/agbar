@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { noopContext } from "../StackAdapter.js";
 import { springbootAdapter } from "./adapter.js";
 import type { ScaffoldConfig } from "../../config.js";
 
@@ -36,7 +37,7 @@ describe("springbootAdapter.generate - file tree", () => {
     const config = baseConfig({
       addons: { structure: "multi-module", isFourLayer: true, dbProvider: "postgres", includeJwt: true, includeDocker: true },
     });
-    await springbootAdapter.generate(config, outDir);
+    await springbootAdapter.generate(config, outDir, noopContext);
     expect(listFiles(outDir)).toMatchSnapshot();
   });
 
@@ -46,7 +47,7 @@ describe("springbootAdapter.generate - file tree", () => {
       includeTests: false,
       addons: { structure: "multi-module", isFourLayer: false, dbProvider: "none", includeJwt: false, includeDocker: false },
     });
-    await springbootAdapter.generate(config, outDir);
+    await springbootAdapter.generate(config, outDir, noopContext);
     expect(listFiles(outDir)).toMatchSnapshot();
   });
 
@@ -55,7 +56,7 @@ describe("springbootAdapter.generate - file tree", () => {
     const config = baseConfig({
       addons: { structure: "package-by-layer", isFourLayer: false, dbProvider: "mysql", includeJwt: true, includeDocker: false },
     });
-    await springbootAdapter.generate(config, outDir);
+    await springbootAdapter.generate(config, outDir, noopContext);
     expect(listFiles(outDir)).toMatchSnapshot();
   });
 
@@ -64,7 +65,7 @@ describe("springbootAdapter.generate - file tree", () => {
     const config = baseConfig({
       addons: { structure: "package-by-feature", isFourLayer: false, dbProvider: "none", includeJwt: true, includeDocker: false },
     });
-    await springbootAdapter.generate(config, outDir);
+    await springbootAdapter.generate(config, outDir, noopContext);
     expect(listFiles(outDir)).toMatchSnapshot();
   });
 
@@ -75,7 +76,7 @@ describe("springbootAdapter.generate - file tree", () => {
       serviceNames: ["Orders", "Payments"],
       addons: { structure: "package-by-layer", isFourLayer: false, dbProvider: "none", includeJwt: false, includeDocker: false },
     });
-    await springbootAdapter.generate(config, outDir);
+    await springbootAdapter.generate(config, outDir, noopContext);
     expect(listFiles(outDir)).toMatchSnapshot();
   });
 });
@@ -86,7 +87,7 @@ describe("springbootAdapter.generate - content correctness", () => {
     const config = baseConfig({
       addons: { structure: "multi-module", isFourLayer: true, dbProvider: "none", includeJwt: false, includeDocker: false },
     });
-    await springbootAdapter.generate(config, outDir);
+    await springbootAdapter.generate(config, outDir, noopContext);
     const apiPom = readFileSync(path.join(outDir, "snapapp-api", "pom.xml"), "utf-8");
     expect(apiPom).toContain("snapapp-application");
     expect(apiPom).toContain("snapapp-infrastructure");
@@ -96,7 +97,7 @@ describe("springbootAdapter.generate - content correctness", () => {
   it("Package-by-Layer puts everything under one pom.xml with no submodules", async () => {
     const outDir = path.join(tmpDir, "out");
     const config = baseConfig();
-    await springbootAdapter.generate(config, outDir);
+    await springbootAdapter.generate(config, outDir, noopContext);
     expect(listFiles(outDir).some((f) => f.startsWith("snapapp-"))).toBe(false);
     const pom = readFileSync(path.join(outDir, "pom.xml"), "utf-8");
     expect(pom).not.toContain("<modules>");
@@ -105,7 +106,7 @@ describe("springbootAdapter.generate - content correctness", () => {
   it("JWT off means no security/auth files are written at all", async () => {
     const outDir = path.join(tmpDir, "out");
     const config = baseConfig({ addons: { structure: "package-by-layer", isFourLayer: false, dbProvider: "none", includeJwt: false, includeDocker: false } });
-    await springbootAdapter.generate(config, outDir);
+    await springbootAdapter.generate(config, outDir, noopContext);
     const files = listFiles(outDir);
     expect(files.some((f) => f.includes("Auth"))).toBe(false);
     expect(files.some((f) => f.includes("Security") || f.includes("JwtAuthFilter"))).toBe(false);
@@ -113,7 +114,7 @@ describe("springbootAdapter.generate - content correctness", () => {
 
   it("every generated project includes the Maven Wrapper", async () => {
     const outDir = path.join(tmpDir, "out");
-    await springbootAdapter.generate(baseConfig(), outDir);
+    await springbootAdapter.generate(baseConfig(), outDir, noopContext);
     const files = listFiles(outDir);
     expect(files).toContain("mvnw");
     expect(files).toContain("mvnw.cmd");
@@ -128,7 +129,8 @@ describe("springbootAdapter.generate - content correctness", () => {
     const outDir = path.join(tmpDir, "out");
     await springbootAdapter.generate(
       baseConfig({ addons: { structure: "multi-module", isFourLayer: true, dbProvider: "none", includeJwt: false, includeDocker: true } }),
-      outDir
+      outDir,
+      noopContext
     );
     const dockerfile = readFileSync(path.join(outDir, "Dockerfile"), "utf-8");
     expect(dockerfile).toContain("RUN mvn -pl snapapp-api -am clean package -DskipTests");
@@ -139,7 +141,8 @@ describe("springbootAdapter.generate - content correctness", () => {
     const outDir = path.join(tmpDir, "out");
     await springbootAdapter.generate(
       baseConfig({ addons: { structure: "package-by-layer", isFourLayer: false, dbProvider: "none", includeJwt: false, includeDocker: true } }),
-      outDir
+      outDir,
+      noopContext
     );
     const dockerfile = readFileSync(path.join(outDir, "Dockerfile"), "utf-8");
     expect(dockerfile).toContain("RUN mvn clean package -DskipTests");

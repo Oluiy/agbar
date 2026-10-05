@@ -27,7 +27,7 @@ export async function promptAxumAddons(): Promise<Record<string, unknown>> {
   const useCli = checkCancel(
     await confirm({ message: "Create the crate with cargo new + cargo add? Recommended - cargo picks current versions.", initialValue: true })
   );
-  const install = checkCancel(await confirm({ message: "Build and run the tests now (cargo test)?", initialValue: true }));
+  const install = checkCancel(await confirm({ message: "Build and run the tests now (cargo test)? (takes minutes)", initialValue: false }));
 
   return { structure, db, includeDocker, useCli, install } satisfies AxumAddons;
 }

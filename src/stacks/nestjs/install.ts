@@ -1,4 +1,6 @@
-import { isAvailable, runCommand } from "../../utils/runCommand.js";
+import { isAvailable } from "../../utils/runCommand.js";
+import type { RunContext } from "../StackAdapter.js";
+import { stepRunner } from "../stepRunner.js";
 import type { VerifyResult } from "../verifyResult.js";
 import { tail } from "../../utils/text.js";
 import type { NestOrm } from "./types.js";
@@ -14,14 +16,15 @@ import type { NestOrm } from "./types.js";
  * Never throws - generation already succeeded, so a failure here is something to
  * report, not a reason to discard the files.
  */
-export async function installAndTest(projectDir: string, orm: NestOrm): Promise<VerifyResult> {
+export async function installAndTest(projectDir: string, orm: NestOrm, context: RunContext): Promise<VerifyResult> {
+  const run = stepRunner(context, projectDir);
   if (!(await isAvailable("npm", projectDir))) {
     return { detail: "npm is not on PATH, so the project could not be verified here." };
   }
 
   // No lock file exists yet, so `npm ci` cannot be used - that is the one case
   // where `npm install` is the correct command.
-  const install = await runCommand("npm", ["install", "--no-audit", "--no-fund"], projectDir, 900_000);
+  const install = await run("installing packages with npm", "npm", ["install", "--no-audit", "--no-fund"], { timeoutMs: 900_000 });
   if (!install.ok) {
     return { installed: false, via: "npm", detail: tail(install.stderr || install.stdout) };
   }
@@ -29,12 +32,12 @@ export async function installAndTest(projectDir: string, orm: NestOrm): Promise<
   if (orm === "prisma") {
     // package.json runs this on postinstall too; running it explicitly means a
     // generation failure is reported as itself rather than as a compile error later.
-    const generate = await runCommand("npx", ["prisma", "generate"], projectDir, 300_000);
+    const generate = await run("generating the Prisma client", "npx", ["prisma", "generate"], { timeoutMs: 300_000 });
     if (!generate.ok) {
       return { installed: true, testsPassed: false, via: "npm", detail: `prisma generate failed:\n${tail(generate.stderr || generate.stdout)}` };
     }
   }
 
-  const tests = await runCommand("npm", ["test", "--silent"], projectDir, 600_000);
+  const tests = await run("running the tests", "npm", ["test", "--silent"], { timeoutMs: 600_000 });
   return { installed: true, testsPassed: tests.ok, via: "npm", detail: tail(tests.stdout || tests.stderr) };
 }

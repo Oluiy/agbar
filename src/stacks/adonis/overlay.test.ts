@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { writeFile } from "../../utils/fsWrite.js";
+import { noopContext } from "../StackAdapter.js";
 import { adonisAdapter } from "./adapter.js";
 import { applyOverlay } from "./overlay.js";
 import { ITEMS_MIGRATION } from "./templates.js";
@@ -109,7 +110,8 @@ describe("adonisAdapter", () => {
           usesLlmApi: false,
           addons: { install: false },
         },
-        dir
+        dir,
+        noopContext
       )
     ).rejects.toThrow(/Node 24|already exists/);
   });

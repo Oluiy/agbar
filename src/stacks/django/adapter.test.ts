@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ScaffoldConfig } from "../../config.js";
+import { noopContext } from "../StackAdapter.js";
 import { djangoAdapter } from "./adapter.js";
 import { resolveDjangoAddons } from "./addons.js";
 import { DJANGO_STRUCTURES } from "./types.js";
@@ -33,7 +34,8 @@ async function generate(addons: Record<string, unknown> = {}, overrides: Partial
       addons: { structure: "standard", db: "sqlite", includeDocker: false, useCli: false, install: false, ...addons },
       ...overrides,
     },
-    outDir
+    outDir,
+    noopContext
   );
   return outDir;
 }

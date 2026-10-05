@@ -2,9 +2,9 @@ import { confirm, isCancel } from "@clack/prompts";
 import { copyFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import type { ScaffoldConfig } from "../../config.js";
-import { runCommand } from "../../utils/runCommand.js";
 import { tail } from "../../utils/text.js";
-import type { GenerateResult, StackAdapter } from "../StackAdapter.js";
+import type { RunContext, StackAdapter } from "../StackAdapter.js";
+import { stepRunner } from "../stepRunner.js";
 import type { VerifyResult } from "../verifyResult.js";
 import { applyOverlay } from "./overlay.js";
 
@@ -43,17 +43,20 @@ function assertNodeVersion(): void {
   }
 }
 
-async function run(command: string, args: string[], cwd: string, timeoutMs: number, step: string): Promise<void> {
-  const result = await runCommand(command, args, cwd, timeoutMs, NPM_ENV);
+/** Runs one generation stage; a failure aborts generation (the engine then removes the folder). */
+async function run(context: RunContext, command: string, args: string[], cwd: string, timeoutMs: number, label: string): Promise<void> {
+  const result = await stepRunner(context, cwd)(label, command, args, { timeoutMs, env: NPM_ENV });
   if (!result.ok) {
-    throw new Error(`${step} failed:\n${tail(result.stderr || result.stdout)}`);
+    throw new Error(`${label} failed:\n${tail(result.stderr || result.stdout)}`);
   }
 }
 
-async function verify(projectDir: string): Promise<VerifyResult> {
-  const typecheck = await runCommand("npx", ["tsc", "--noEmit"], projectDir, 300_000, NPM_ENV);
+async function verify(config: ScaffoldConfig, projectDir: string, context: RunContext): Promise<VerifyResult> {
+  if (!config.includeTests) return { detail: "No tests were generated, so there was nothing to run." };
+  const step = stepRunner(context, projectDir);
+  const typecheck = await step("typechecking", "npx", ["tsc", "--noEmit"], { timeoutMs: 300_000, env: NPM_ENV });
   if (!typecheck.ok) return { installed: true, testsPassed: false, via: "npm", detail: `typecheck failed:\n${tail(typecheck.stdout || typecheck.stderr)}` };
-  const tests = await runCommand("node", ["ace", "test"], projectDir, 600_000, NPM_ENV);
+  const tests = await step("running the tests", "node", ["ace", "test"], { timeoutMs: 600_000, env: NPM_ENV });
   return { installed: true, testsPassed: tests.ok, via: "npm", detail: tail(tests.stdout || tests.stderr) };
 }
 
@@ -62,7 +65,7 @@ export const adonisAdapter: StackAdapter = {
   label: "AdonisJS 7 (official api starter kit + Lucid)",
 
   async promptAddons() {
-    const install = await confirm({ message: "Typecheck and run the tests after generating?", initialValue: true });
+    const install = await confirm({ message: "Typecheck and run the tests after generating?", initialValue: false });
     if (isCancel(install)) process.exit(1);
     return { install } satisfies AdonisAddons;
   },
@@ -71,34 +74,39 @@ export const adonisAdapter: StackAdapter = {
     return { install: raw.install === true } satisfies AdonisAddons;
   },
 
-  async generate(config: ScaffoldConfig, outDir: string): Promise<GenerateResult> {
+  capabilities: { microservices: false, port: false },
+
+  async generate(config: ScaffoldConfig, outDir: string, context: RunContext): Promise<void> {
     assertNodeVersion();
-    const addons = config.addons as unknown as AdonisAddons;
     if (existsSync(outDir)) {
       throw new Error(`${outDir} already exists. The Adonis starter kit needs an empty destination.`);
     }
 
     // The official scaffolder: downloads the kit, installs it, and generates APP_KEY.
     await run(
+      context,
       "npm",
       ["create", "adonisjs@latest", path.basename(outDir), "--", "--kit=api", "--pkg=npm", "--skip-migrations"],
       path.dirname(outDir),
       1_800_000,
-      "npm create adonisjs"
+      "downloading and installing the AdonisJS starter kit (the slow part)"
     );
 
     // If the scaffolder's "prepare" step did not run, do what it would have done.
     if (!existsSync(path.join(outDir, ".env"))) {
       copyFileSync(path.join(outDir, ".env.example"), path.join(outDir, ".env"));
-      await run("node", ["ace", "generate:key"], outDir, 120_000, "node ace generate:key");
+      await run(context, "node", ["ace", "generate:key"], outDir, 120_000, "generating the app key");
     }
 
     // Rate limiting the Adonis way. Its configure step only offers the database and redis
     // stores; database survives restarts and is shared across instances.
-    await run("node", ["ace", "add", "@adonisjs/limiter", "--store=database"], outDir, 1_200_000, "node ace add @adonisjs/limiter");
+    await run(context, "node", ["ace", "add", "@adonisjs/limiter", "--store=database"], outDir, 1_200_000, "adding rate limiting");
 
+    context.step("applying the example feature and tests");
     applyOverlay(outDir, config.projectName, config.includeTests);
-
-    return { verify: addons.install && config.includeTests ? await verify(outDir) : undefined };
   },
+
+  verify,
+
+  nextSteps: (config) => [`cd ${config.projectName}`, "node ace test", "node ace serve --hmr"],
 };

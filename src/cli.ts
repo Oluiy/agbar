@@ -4,7 +4,7 @@ import * as clack from "@clack/prompts";
 import pc from "picocolors";
 import { runPrompts } from "./prompts.js";
 import { resolveNonInteractive, type NonInteractiveFlags } from "./nonInteractive.js";
-import { generateProject } from "./engine.js";
+import { CancelledError, generateProject } from "./engine.js";
 import { adonisAdapter } from "./stacks/adonis/adapter.js";
 import { aspnetcoreAdapter } from "./stacks/aspnetcore/adapter.js";
 import { axumAdapter } from "./stacks/axum/adapter.js";
@@ -12,7 +12,9 @@ import { djangoAdapter } from "./stacks/django/adapter.js";
 import { fastapiAdapter } from "./stacks/fastapi/adapter.js";
 import { nestjsAdapter } from "./stacks/nestjs/adapter.js";
 import { expressAdapter, fastifyAdapter } from "./stacks/node/adapter.js";
-import type { VerifyResult } from "./stacks/verifyResult.js";
+import { abortOnInterrupt } from "./interrupt.js";
+import { printVerifyResult } from "./scaffoldReport.js";
+import { createTerminalReporter } from "./ui/progress.js";
 import { springbootAdapter } from "./stacks/springboot/adapter.js";
 import type { StackAdapter } from "./stacks/StackAdapter.js";
 import { printCheck } from "./check/checkCommand.js";
@@ -47,29 +49,6 @@ const stacks: StackAdapter[] = [
 
 const COMMAND_NAMES = ["concepts", "learn", "check", "tracks", "cron", "regex", "submit"];
 
-/**
- * Reports whether the generated project actually installed and passed its tests.
- * Worth printing loudly either way: "it generated" and "it works" are different
- * claims, and only one of them is worth trusting.
- */
-function printVerifyResult(result: VerifyResult | undefined): void {
-  if (!result) return;
-
-  if (result.installed === undefined) {
-    clack.log.warn(`Not verified: ${result.detail}`);
-    return;
-  }
-  if (!result.installed) {
-    clack.log.error(`Dependency install failed (${result.via}). The files are written; fix the install and re-run the tests.\n${result.detail}`);
-    return;
-  }
-  if (result.testsPassed) {
-    clack.log.success(pc.green(`Verified: dependencies installed (${result.via}) and the test suite passes.`));
-    return;
-  }
-  clack.log.error(`Installed (${result.via}), but the tests did not pass:\n${result.detail}`);
-}
-
 function editDistance(a: string, b: string): number {
   const d: number[][] = Array.from({ length: a.length + 1 }, (_, i) => [i, ...new Array<number>(b.length).fill(0)]);
   for (let j = 0; j <= b.length; j++) d[0][j] = j;
@@ -102,11 +81,12 @@ program
   .argument("[projectName]", "Project name (skips the name prompt)")
   .option("-y, --yes", "Run non-interactively, filling in anything unspecified with defaults (requires --stack, or set it in --config)")
   .option("--config <path>", "Path to a JSON config file for non-interactive generation - see README")
-  .option("--stack <id>", "Stack to generate: aspnetcore | springboot")
-  .option("--structure <mode>", "Spring Boot only: multi-module | package-by-layer | package-by-feature")
+  .option("--stack <id>", `Stack to generate: ${stacks.map((s) => s.id).join(" | ")}`)
+  .option("--structure <mode>", "Project layout. Spring Boot: multi-module | package-by-layer | package-by-feature. Others: layered | clean | modular | ...")
   .option("--four-layer", "Spring Boot multi-module: use 4 layers (API/Application/Domain/Infrastructure)")
   .option("--three-layer", "Spring Boot multi-module: use 3 layers (API/Application/Domain)")
-  .option("--db <provider>", "Database provider: none | postgres | mysql")
+  .option("--db <provider>", "Database: sqlite | postgres (Spring Boot: none | postgres | mysql; FastAPI also: none)")
+  .option("--orm <name>", "Express/Fastify ORM: prisma | drizzle | typeorm | sequelize | none")
   .option("--jwt", "Include JWT authentication boilerplate")
   .option("--docker", "Include Dockerfile & docker-compose.yml")
   .option("--no-tests", "Skip generating a test project (included by default)")
@@ -130,8 +110,22 @@ program
     try {
       const { config, adapter } = nonInteractive ? resolveNonInteractive(stacks, opts, projectNameArg) : await runPrompts(stacks, projectNameArg);
 
-      const { outDir, verify } = await generateProject(config, adapter);
-      printVerifyResult(verify);
+      // Ctrl-C belongs to us, not to the spinner or the installer: the first press aborts the
+      // signal, the engine stops what is running and tidies up, and control returns here.
+      const abort = new AbortController();
+      const stopListening = abortOnInterrupt(abort, () => console.log(pc.dim("\nStopping... (press Ctrl-C again to quit immediately)")));
+      let result;
+      try {
+        result = await generateProject(config, adapter, { reporter: createTerminalReporter(), signal: abort.signal });
+      } finally {
+        stopListening();
+      }
+      const { outDir, verify } = result;
+      printVerifyResult(verify, config, adapter);
+      if (verify?.cancelled) {
+        process.exitCode = 130;
+        return;
+      }
       printRecommendations(config, adapter);
       if (opts.explain !== false) {
         writeTeachingDocs(outDir, config, adapter);
@@ -145,6 +139,11 @@ program
         clack.outro(doneMessage);
       }
     } catch (err) {
+      if (err instanceof CancelledError) {
+        console.log("Cancelled. Nothing was created.");
+        process.exitCode = 130;
+        return;
+      }
       const message = err instanceof Error ? err.message : String(err);
       // clack.log.error assumes an active prompt session (intro() was called);
       // a plain stderr line is the right shape for a scripted/CI run instead.

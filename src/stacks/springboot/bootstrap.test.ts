@@ -2,6 +2,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { noopContext } from "../StackAdapter.js";
 import { springbootAdapter } from "./adapter.js";
 import { resolveSpringBootAddons } from "./addons.js";
 import { initializrDependencies } from "./bootstrap.js";
@@ -73,7 +74,8 @@ describe("springbootAdapter - the hand-written path still produces a complete bu
         usesLlmApi: false,
         addons: { ...base },
       },
-      outDir
+      outDir,
+      noopContext
     );
 
     expect(existsSync(path.join(outDir, "pom.xml"))).toBe(true);
@@ -97,7 +99,8 @@ describe("springbootAdapter - the hand-written path still produces a complete bu
         usesLlmApi: false,
         addons: { ...base },
       },
-      outDir
+      outDir,
+      noopContext
     );
     const main = readFileSync(path.join(outDir, "src/main/java/com/buildquick/oneapp/OneAppApplication.java"), "utf-8");
     expect(main.match(/@SpringBootApplication/g)).toHaveLength(1);

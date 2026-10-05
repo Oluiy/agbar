@@ -1,5 +1,7 @@
-import { isAvailable, runCommand } from "../../utils/runCommand.js";
+import { isAvailable } from "../../utils/runCommand.js";
 import { tail } from "../../utils/text.js";
+import type { RunContext } from "../StackAdapter.js";
+import { stepRunner } from "../stepRunner.js";
 import type { VerifyResult } from "../verifyResult.js";
 
 /**
@@ -16,21 +18,22 @@ import type { VerifyResult } from "../verifyResult.js";
  *
  * Never throws: generation already succeeded, so a failure is something to report.
  */
-export async function installAndTest(projectDir: string): Promise<VerifyResult> {
+export async function installAndTest(projectDir: string, context: RunContext): Promise<VerifyResult> {
+  const run = stepRunner(context, projectDir);
   if (!(await isAvailable("npm", projectDir))) {
     return { detail: "npm is not on PATH, so the project could not be verified here." };
   }
 
-  const install = await runCommand(
+  const install = await run(
+    "installing packages with npm",
     "npm",
     ["install", "--no-audit", "--no-fund", "--fetch-timeout=30000", "--fetch-retries=8", "--fetch-retry-mintimeout=1000", "--fetch-retry-maxtimeout=15000"],
-    projectDir,
-    1_200_000
+    { timeoutMs: 1_200_000 }
   );
   if (!install.ok) {
     return { installed: false, via: "npm", detail: tail(install.stderr || install.stdout) };
   }
 
-  const tests = await runCommand("npm", ["test", "--silent"], projectDir, 600_000);
+  const tests = await run("running the tests", "npm", ["test", "--silent"], { timeoutMs: 600_000 });
   return { installed: true, testsPassed: tests.ok, via: "npm", detail: tail(tests.stdout || tests.stderr) };
 }

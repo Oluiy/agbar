@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ScaffoldConfig } from "../../config.js";
+import { noopContext } from "../StackAdapter.js";
 import { expressAdapter, fastifyAdapter } from "./adapter.js";
 import { resolveNodeAddons } from "./addons.js";
 import { rel, toPackageName } from "./layout.js";
@@ -38,7 +39,8 @@ async function generate(framework: Framework, addons: Record<string, unknown> = 
       addons: { structure: "layered", orm: "prisma", db: "sqlite", includeDocker: false, install: false, ...addons },
       ...overrides,
     },
-    outDir
+    outDir,
+    noopContext
   );
   return outDir;
 }

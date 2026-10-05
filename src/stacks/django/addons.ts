@@ -25,7 +25,7 @@ export async function promptDjangoAddons(): Promise<Record<string, unknown>> {
 
   const includeDocker = checkCancel(await confirm({ message: "Add Dockerfile & docker-compose.yml?", initialValue: db === "postgres" }));
   const useCli = checkCancel(await confirm({ message: "Use django-admin startproject for the base (when Django is installed)?", initialValue: true }));
-  const install = checkCancel(await confirm({ message: "Create a venv, install dependencies and run the tests now?", initialValue: true }));
+  const install = checkCancel(await confirm({ message: "Create a venv, install dependencies and run the tests now? (takes minutes)", initialValue: false }));
 
   return { structure, db, includeDocker, useCli, install } satisfies DjangoAddons;
 }

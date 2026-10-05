@@ -2,7 +2,7 @@ import path from "node:path";
 import type { ScaffoldConfig } from "../../config.js";
 import { ensureDir, writeFile } from "../../utils/fsWrite.js";
 import { isAvailable, runCommand } from "../../utils/runCommand.js";
-import type { GenerateResult, StackAdapter } from "../StackAdapter.js";
+import type { StackAdapter } from "../StackAdapter.js";
 import { promptDjangoAddons, resolveDjangoAddons } from "./addons.js";
 import { installAndTest } from "./install.js";
 import {
@@ -54,7 +54,9 @@ export const djangoAdapter: StackAdapter = {
   promptAddons: promptDjangoAddons,
   resolveAddons: resolveDjangoAddons,
 
-  async generate(config: ScaffoldConfig, outDir: string): Promise<GenerateResult> {
+  capabilities: { microservices: false, port: false },
+
+  async generate(config: ScaffoldConfig, outDir: string): Promise<void> {
     const addons = config.addons as unknown as DjangoAddons;
     const { structure, db, includeDocker } = addons;
     const name = config.projectName;
@@ -111,7 +113,15 @@ export const djangoAdapter: StackAdapter = {
       write("Dockerfile", dockerfile());
       write("docker-compose.yml", dockerCompose(name, db));
     }
-
-    return { verify: addons.install ? await installAndTest(outDir) : undefined };
   },
+
+  verify: (_config, outDir, context) => installAndTest(outDir, context),
+
+  nextSteps: (config) => [
+    `cd ${config.projectName}`,
+    "python3 -m venv .venv && source .venv/bin/activate",
+    "pip install -r requirements.txt",
+    "python manage.py test",
+    "python manage.py migrate && python manage.py runserver",
+  ],
 };

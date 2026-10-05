@@ -43,7 +43,7 @@ export async function promptNestAddons(): Promise<Record<string, unknown>> {
       initialValue: true,
     })
   );
-  const install = checkCancel(await confirm({ message: "Install dependencies and run the tests now?", initialValue: true }));
+  const install = checkCancel(await confirm({ message: "Install dependencies and run the tests now? (takes minutes)", initialValue: false }));
 
   return { structure, orm, db, includeDocker, useCli, install } satisfies NestAddons;
 }

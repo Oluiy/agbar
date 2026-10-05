@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ScaffoldConfig } from "../../config.js";
+import { noopContext } from "../StackAdapter.js";
 import { axumAdapter } from "./adapter.js";
 import { resolveAxumAddons } from "./addons.js";
 import { toKebab, toSnake } from "./layout.js";
@@ -34,7 +35,8 @@ async function generate(addons: Record<string, unknown> = {}, overrides: Partial
       addons: { structure: "layered", db: "sqlite", includeDocker: false, useCli: false, install: false, ...addons },
       ...overrides,
     },
-    outDir
+    outDir,
+    noopContext
   );
   return outDir;
 }
@@ -89,7 +91,8 @@ describe("axumAdapter.generate - module paths resolve to generated files", () =>
           usesLlmApi: false,
           addons: { structure, db: "sqlite", includeDocker: false, useCli: false, install: false },
         },
-        outDir
+        outDir,
+        noopContext
       );
       const files = new Set(listFiles(outDir));
       for (const file of [...files].filter((f) => f.endsWith("mod.rs") || f === "src/lib.rs")) {

@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { ScaffoldConfig } from "../../config.js";
 import { writeFile } from "../../utils/fsWrite.js";
-import type { GenerateResult, StackAdapter } from "../StackAdapter.js";
+import type { StackAdapter } from "../StackAdapter.js";
 import { promptAxumAddons, resolveAxumAddons } from "./addons.js";
 import { bootstrapWithCargo } from "./bootstrap.js";
 import { installAndTest } from "./install.js";
@@ -24,7 +24,9 @@ export const axumAdapter: StackAdapter = {
   promptAddons: promptAxumAddons,
   resolveAddons: resolveAxumAddons,
 
-  async generate(config: ScaffoldConfig, outDir: string): Promise<GenerateResult> {
+  capabilities: { microservices: false, port: false },
+
+  async generate(config: ScaffoldConfig, outDir: string): Promise<void> {
     const addons = config.addons as unknown as AxumAddons;
     const { structure, db, includeDocker } = addons;
     const paths = pathsFor(structure);
@@ -65,7 +67,9 @@ export const axumAdapter: StackAdapter = {
       write("Dockerfile", dockerfile(name));
       write("docker-compose.yml", dockerCompose(name, db));
     }
-
-    return { verify: addons.install ? await installAndTest(outDir) : undefined };
   },
+
+  verify: (_config, outDir, context) => installAndTest(outDir, context),
+
+  nextSteps: (config) => [`cd ${config.projectName}`, "cargo test", "cargo run"],
 };

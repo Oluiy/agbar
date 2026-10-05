@@ -54,6 +54,10 @@ export const springbootAdapter: StackAdapter = {
   promptAddons: promptSpringBootAddons,
   resolveAddons: resolveSpringBootAddons,
 
+  capabilities: { jwt: true, layers: true },
+
+  nextSteps: (config) => [`cd ${config.projectName}`, "mvn test", "mvn spring-boot:run"],
+
   async generate(config: ScaffoldConfig, outDir: string): Promise<void> {
     const addons = config.addons as unknown as SpringBootAddons;
 
