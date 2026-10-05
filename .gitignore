@@ -13,3 +13,6 @@ corpus/*
 !corpus/README.md
 ROADMAP.md
 commit.md
+GUIDE.md
+OVERVIEW.md
+COMMANDS.md
