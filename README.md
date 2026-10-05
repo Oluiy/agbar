@@ -44,4 +44,4 @@ buildquick regex '^\d{5}$' 12345 123456   # see what a regex matches, and its pi
 
 ## Learn more
 
-[GUIDE.md](GUIDE.md) - every command in depth · [COMMANDS.md](COMMANDS.md) - what to expect from each · [OVERVIEW.md](OVERVIEW.md) - how it's built · [CONTRIBUTING.md](CONTRIBUTING.md) · [CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [LICENSE](LICENSE) (MIT)
+[CONTRIBUTING.md](CONTRIBUTING.md) · [CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [LICENSE](LICENSE) (MIT)

@@ -4,8 +4,6 @@ All notable changes are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
-
 ## [0.1.0] - 2026-10-05
 
 First public release.
@@ -41,6 +39,21 @@ First public release.
 - **`.buildquickrc`**: `{"kind": "cli"}` skips advice meant for production services, and
   inline suppressions silence a rule on a line.
 - **One colour palette** across all commands, with colour never the only signal.
+- **Scaffolding is fast by default.** Generating is about half a second; installing
+  dependencies is minutes, so "install and run the tests now?" defaults to No and the exact
+  commands to finish by hand are printed instead. Answer Yes and installing runs as its own
+  phase, with named steps and an elapsed clock (`uv` is used when present, and pip says so).
+- **Ctrl-C does what it says.** Cancelling before generation finishes leaves nothing behind;
+  cancelling during the install keeps the project and says how to finish (exit code 130); a
+  second Ctrl-C quits immediately. A destination that already holds files is refused rather
+  than merged into.
+- **Only the questions a stack uses are asked**, with a "use the recommended defaults"
+  shortcut that names what it picks. Flags a stack ignores (`--port`, `--microservice`,
+  `--services`, `--jwt`, `--four-layer`, `--three-layer`) are refused with a clear message
+  instead of being silently dropped.
+- **`--db` and `--orm` work on every stack** (previously `--db` only reached Spring Boot),
+  and the Express/Fastify ORM menu offers every ORM that can be generated - Prisma, Drizzle,
+  TypeORM and Sequelize - rather than only Prisma.
 
 ### Security
 

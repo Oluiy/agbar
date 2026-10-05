@@ -43,8 +43,7 @@ where it is wrong.
 
 Lessons and concepts are content, not code, and live under `content/` and
 `src/concepts*`. Each lesson ships a starter that must fail and a reference fix that must
-pass - the test suite enforces this. [OVERVIEW.md](OVERVIEW.md) explains how the pieces
-fit.
+pass - the test suite enforces this.
 
 ## Pull requests
 
