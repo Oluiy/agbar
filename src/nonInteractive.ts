@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import type { ScaffoldConfig } from "./config.js";
-import type { StackAdapter } from "./stacks/StackAdapter.js";
+import { capabilitiesOf, type StackAdapter } from "./stacks/StackAdapter.js";
 import { isValidIdentifierName } from "./utils/nameValidation.js";
 
 /** Raw CLI flags as commander hands them back (see cli.ts for the option definitions). */
@@ -11,6 +11,7 @@ export interface NonInteractiveFlags {
   fourLayer?: boolean;
   threeLayer?: boolean;
   db?: string;
+  orm?: string;
   jwt?: boolean;
   docker?: boolean;
   tests?: boolean; // commander's --no-tests negation defaults this to true - see the direct argv check below for why that alone isn't enough.
@@ -62,6 +63,27 @@ function loadConfigFile(path: string): ConfigFileShape {
 }
 
 /**
+ * A scripted run that asks for something the stack ignores would "succeed" while generating
+ * something other than what was asked for, so name the setting and the stack instead.
+ */
+function rejectUnusedSettings(adapter: StackAdapter, flags: NonInteractiveFlags, fileConfig: ConfigFileShape): void {
+  const capabilities = capabilitiesOf(adapter);
+  const refuse = (setting: string): never => {
+    throw new Error(`${setting} has no effect on ${adapter.label}, which does not use it. Remove it.`);
+  };
+
+  if (!capabilities.port && (flags.port !== undefined || fileConfig.httpPort !== undefined)) refuse(flags.port !== undefined ? "--port" : '"httpPort"');
+  if (!capabilities.jwt && flags.jwt) refuse("--jwt");
+  if (!capabilities.layers && (flags.fourLayer || flags.threeLayer)) refuse(flags.fourLayer ? "--four-layer" : "--three-layer");
+  if (!capabilities.microservices) {
+    if (flags.microservice) refuse("--microservice");
+    if (flags.services !== undefined) refuse("--services");
+    if (fileConfig.isMicroservice === true) refuse('"isMicroservice"');
+    if (fileConfig.serviceNames?.length) refuse('"serviceNames"');
+  }
+}
+
+/**
  * Resolves a full ScaffoldConfig + StackAdapter from CLI flags and/or a
  * --config JSON file, with zero prompts - the path that makes CI and
  * automated testing possible. Flags win over the config file's own values
@@ -99,6 +121,8 @@ export function resolveNonInteractive(
       `'${adapter.label}' can't run non-interactively yet - it hands off to another program's own interactive prompts. Run 'buildquick' without --yes/--config to use it.`
     );
   }
+
+  rejectUnusedSettings(adapter, flags, fileConfig);
 
   const serviceNames = flags.services
     ? flags.services
@@ -141,7 +165,13 @@ export function resolveNonInteractive(
   if (flags.structure !== undefined) rawAddons.structure = flags.structure;
   if (flags.fourLayer) rawAddons.isFourLayer = true;
   if (flags.threeLayer) rawAddons.isFourLayer = false;
-  if (flags.db !== undefined) rawAddons.dbProvider = flags.db;
+  // Spring Boot calls it `dbProvider`, every other stack `db`. Setting both means the flag works
+  // everywhere, and a stack that cannot do the value (mysql on FastAPI) rejects it by name.
+  if (flags.db !== undefined) {
+    rawAddons.dbProvider = flags.db;
+    rawAddons.db = flags.db;
+  }
+  if (flags.orm !== undefined) rawAddons.orm = flags.orm;
   if (flags.jwt) rawAddons.includeJwt = true;
   if (flags.docker) rawAddons.includeDocker = true;
 

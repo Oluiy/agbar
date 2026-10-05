@@ -1,6 +1,7 @@
 import { cancel, confirm, intro, select, text } from "@clack/prompts";
 import type { ScaffoldConfig } from "./config.js";
-import type { StackAdapter } from "./stacks/StackAdapter.js";
+import { describeDefaults, quickConfig, supportsQuickDefaults } from "./quickConfig.js";
+import { capabilitiesOf, type StackAdapter } from "./stacks/StackAdapter.js";
 import { isValidIdentifierName } from "./utils/nameValidation.js";
 import { checkCancel } from "./utils/prompts.js";
 
@@ -47,17 +48,28 @@ export async function runPrompts(stacks: StackAdapter[], projectNameArg?: string
     })
   );
   const adapter = stacks.find((s) => s.id === stackId)!;
+  const capabilities = capabilitiesOf(adapter);
 
-  const deploymentChoice = checkCancel(
-    await select({
-      message: "Deployment Style:",
-      options: [
-        { value: "mono", label: "Monolithic (single solution)" },
-        { value: "micro", label: "Microservice (multiple independent services)" },
-      ],
-    })
-  );
-  const isMicroservice = deploymentChoice === "micro";
+  if (supportsQuickDefaults(adapter)) {
+    const picks = describeDefaults(adapter);
+    const quick = checkCancel(
+      await confirm({ message: `Use the recommended defaults?${picks ? ` (${picks})` : ""} Say No to choose the ORM, structure and more.`, initialValue: true })
+    );
+    if (quick) return { config: quickConfig(adapter, projectName, process.cwd()), adapter };
+  }
+
+  // Asked only when the stack uses the answer: a question that changes nothing is noise.
+  const isMicroservice =
+    capabilities.microservices &&
+    checkCancel(
+      await select({
+        message: "Deployment Style:",
+        options: [
+          { value: "mono", label: "Monolithic (single solution)" },
+          { value: "micro", label: "Microservice (multiple independent services)" },
+        ],
+      })
+    ) === "micro";
 
   const serviceNames: string[] = [];
   if (isMicroservice) {
@@ -89,23 +101,27 @@ export async function runPrompts(stacks: StackAdapter[], projectNameArg?: string
     }
   }
 
-  const includeTests = checkCancel(
-    await confirm({
-      message: "Include a starter test project for endpoints?",
-      initialValue: true,
-    })
-  );
+  const includeTests = capabilities.tests
+    ? checkCancel(
+        await confirm({
+          message: "Include a starter test project for endpoints?",
+          initialValue: true,
+        })
+      )
+    : true;
 
-  const portRaw = checkCancel(
-    await text({
-      message: "What is your Port?",
-      defaultValue: "8080",
-      validate: (value) => {
-        const n = Number(value || "8080");
-        if (!Number.isInteger(n) || n <= 0) return "Enter a valid port number.";
-      },
-    })
-  );
+  const portRaw = capabilities.port
+    ? checkCancel(
+        await text({
+          message: "What is your Port?",
+          defaultValue: "8080",
+          validate: (value) => {
+            const n = Number(value || "8080");
+            if (!Number.isInteger(n) || n <= 0) return "Enter a valid port number.";
+          },
+        })
+      )
+    : "8080";
 
   // Cross-stack on purpose: unlike architecture/deployment mechanics, "does
   // this call an LLM API" means the same thing regardless of stack, and drives

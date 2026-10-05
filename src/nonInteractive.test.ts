@@ -130,3 +130,30 @@ describe("resolveNonInteractive", () => {
     expect(config.projectName).toBe("FromArg");
   });
 });
+
+describe("resolveNonInteractive - settings the stack does not use fail loudly", () => {
+  const simple: StackAdapter = { ...fakeAdapter, id: "simple", label: "Simple Stack", capabilities: { microservices: false, port: false } };
+  const withSimple = [simple, fakeAdapter];
+
+  it.each([
+    [{ port: "9000" }, /--port has no effect on Simple Stack/],
+    [{ microservice: true }, /--microservice has no effect/],
+    [{ services: "a,b" }, /--services has no effect/],
+  ])("rejects %j", (flags, message) => {
+    expect(() => resolveNonInteractive(withSimple, { stack: "simple", ...flags }, "MyApp")).toThrow(message);
+  });
+
+  it("rejects the same settings from a --config file", () => {
+    const configPath = writeConfig({ stack: "simple", httpPort: 9000 });
+    expect(() => resolveNonInteractive(withSimple, { config: configPath }, "MyApp")).toThrow(/"httpPort" has no effect/);
+  });
+
+  it("still accepts them for a stack that uses them", () => {
+    const { config } = resolveNonInteractive(withSimple, { stack: "fake", port: "9000" }, "MyApp");
+    expect(config.httpPort).toBe(9000);
+  });
+
+  it("a plain run with none of them is unaffected", () => {
+    expect(() => resolveNonInteractive(withSimple, { stack: "simple" }, "MyApp")).not.toThrow();
+  });
+});
