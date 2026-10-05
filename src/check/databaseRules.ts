@@ -4,7 +4,7 @@ import type { RepoSnapshot, RuleDefinition } from "./types.js";
 
 /**
  * Database rules: query shape, pooling, schema history. Split out of
- * operationalRules.ts when it passed the maintainer notes's 400-line limit - they're all
+ * operationalRules.ts when it passed this project's 400-line limit - they're all
  * "operational" (the runner tags them so in rules.ts), just grouped by what they
  * inspect.
  */

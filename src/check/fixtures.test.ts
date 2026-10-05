@@ -5,7 +5,7 @@ import { scanRepo } from "./repo.js";
 
 /**
  * Real-world-shaped fixtures with manually labeled expected behavior - the
- * measurement baseline the maintainer notes's robustness plan is judged against.
+ * measurement baseline the robustness plan is judged against.
  *
  * Every assertion here documents CURRENT behavior, correct or not. Where
  * current behavior is a known bug, the test says so explicitly and names the
