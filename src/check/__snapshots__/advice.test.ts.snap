@@ -1,0 +1,74 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the fix advice every finding ends on > is exactly what was last reviewed - change it and this diff is the review 1`] = `
+"committed-private-key
+  default   Rotate the key or credential immediately at the provider, then remove it from git history (git filter-repo or BFG) - deleting the file alone leaves it recoverable in every prior commit.
+env-not-ignored
+  default   Add \`.env\` to \`.gitignore\` right now, then rotate every credential that was ever in it - the fix protects what happens next, not what already leaked.
+god-file
+  default   Look for natural seams: does this file mix rendering, data-fetching, and event-handling (or their language equivalents)? Each concern is a candidate module. Start by extracting the piece you're about to touch next, not by planning a full rewrite.
+handler-touches-database
+  default   Move the raw client/session call out of the handler and behind a small interface (a repository or store) the handler calls instead. The handler ends up describing what it needs, not how to get it.
+hardcoded-db-credentials
+  default   Move the credential out to an environment variable and build the connection string from it at runtime. A URL that's easy to construct is also easy to leak, since it travels with the source instead of the environment.
+http-without-timeout
+  default   Pass an explicit timeout on the call flagged below (AbortSignal.timeout() in JS, http.Client{Timeout: ...} in Go, timeout= in Python requests) - a default of 'wait forever' is the actual bug.
+  dotnet    Set a deadline on the call: HttpClient.Timeout (default 100s is usually far too long), or pass a CancellationToken from a CancellationTokenSource with a timeout.
+  go        Don't use http.Get or the default client: build one with a deadline - &http.Client{Timeout: 5 * time.Second} - or pass a context from context.WithTimeout to http.NewRequestWithContext.
+  java      Set both timeouts: HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)) for connecting, and .timeout(...) on the HttpRequest for the response. RestTemplate needs a ClientHttpRequestFactory with both.
+  node      Pass an explicit timeout on the call flagged below: fetch(url, { signal: AbortSignal.timeout(3000) }), or axios's timeout option - a default of 'wait forever' is the actual bug.
+  php       Pass Guzzle's 'timeout' and 'connect_timeout' options on the request (or in the client's defaults) - cURL's default is to wait indefinitely for the response.
+  python    Pass a timeout on the call flagged below: requests.get(url, timeout=(3, 10)) (connect, read) or httpx.Client(timeout=5) - requests has no default timeout at all.
+  ruby      Set both timeouts on the client: Net::HTTP's open_timeout and read_timeout, or Faraday's request: { timeout: 5, open_timeout: 3 } - neither defaults to anything useful.
+  rust      Set a timeout when you build the client: reqwest::Client::builder().timeout(Duration::from_secs(5)).build()?, and reuse that client - a per-request tokio::time::timeout also works.
+in-memory-session-store
+  default   Point express-session at an external store (connect-redis, connect-pg-simple, connect-mongo) instead of its default MemoryStore, so any instance can serve any request and a restart doesn't log everyone out.
+no-circuit-breaker
+  default   Wrap the outbound call in a circuit breaker (opossum, resilience4j-circuitbreaker, Polly, pybreaker, gobreaker) so a failing dependency gets skipped for a cooldown instead of every request queuing up behind it.
+  dotnet    Add a circuit-breaker policy with Polly - Microsoft.Extensions.Http.Resilience wires it straight into IHttpClientFactory - so a failing dependency is skipped for a cooldown.
+  go        Wrap the outbound call in a circuit breaker - sony/gobreaker - so a failing dependency gets skipped for a cooldown instead of every request queuing up behind it.
+  java      Wrap the outbound call with resilience4j-circuitbreaker (annotation or decorator) so a failing dependency gets skipped for a cooldown instead of every request queuing up behind it.
+  node      Wrap the outbound call in a circuit breaker - opossum - so a failing dependency gets skipped for a cooldown instead of every request queuing up behind it.
+  php       Wrap the outbound call in a circuit breaker - ganesha, which has a Guzzle middleware - so a failing dependency gets skipped for a cooldown.
+  python    Wrap the outbound call in a circuit breaker - pybreaker - so a failing dependency gets skipped for a cooldown instead of every request queuing up behind it.
+  ruby      Wrap the outbound call in a circuit breaker - circuitbox, or Semian for a resource-based one - so a failing dependency gets skipped for a cooldown.
+  rust      Wrap the outbound call in a circuit breaker - the failsafe crate, or a small state machine around the client - so a failing dependency is skipped for a cooldown instead of every request queuing behind it.
+no-connection-pool-config
+  default   Replace ad-hoc client construction with a pooled client (pg.Pool, a configured DataSource, etc.), sized to the database's real connection limit divided by your instance count.
+  dotnet    Npgsql and SqlClient pool per connection string - set Maximum Pool Size in it, and make sure every connection uses the same string, since a different one means a separate pool.
+  go        sql.Open already returns a pool - configure it: db.SetMaxOpenConns(10), db.SetMaxIdleConns(5), db.SetConnMaxLifetime(...). For pgx, use pgxpool with MaxConns.
+  java      Configure HikariCP (Spring Boot's default): spring.datasource.hikari.maximum-pool-size, sized to the database's real connection limit divided by your instance count.
+  node      Create one pool at startup and share it: new Pool({ max: 10 }) from pg, or mysql2's createPool - never a client per request. Size it to the database's connection limit divided by your instance count.
+  php       Use persistent connections (PDO::ATTR_PERSISTENT) or put PgBouncer in front - PHP's per-request model means the pool usually lives outside the app.
+  python    Configure the pool where the engine is built: create_engine(url, pool_size=10, max_overflow=5) in SQLAlchemy, or psycopg_pool.ConnectionPool - and create it once, not per request.
+  ruby      Set pool: in database.yml (ActiveRecord) to at least your thread count, sized against the database's real connection limit.
+  rust      Build the pool once and share it: PgPoolOptions::new().max_connections(10).connect(url) from sqlx (or deadpool), then clone the handle - never open a connection per request.
+no-healthcheck
+  default   Add a GET /health (or /healthz) route that returns 200 once the process can actually serve traffic - checking a real dependency like the DB connection, not just that the process is running.
+no-rate-limiting
+  default   Add a rate limiter to the framework's middleware chain (e.g. express-rate-limit, @nestjs/throttler, resilience4j) in front of the routes, not inside individual handlers - one place, applies everywhere.
+  dotnet    Use the built-in rate limiter (.NET 7+): builder.Services.AddRateLimiter(...) then app.UseRateLimiter() before routing, so it applies to every endpoint.
+  go        Add a rate-limiting middleware in front of your routes: golang.org/x/time/rate wrapped as middleware, or your router's own (fiber's limiter, echo's middleware.RateLimiter, tollbooth for net/http).
+  java      Add a rate limiter in front of the controllers: Bucket4j (with its Spring Boot starter) or resilience4j-ratelimiter - one filter, applies to every route.
+  node      Add a rate limiter as middleware in front of the routes, not inside individual handlers - express-rate-limit (Express), @fastify/rate-limit (Fastify), or @nestjs/throttler (NestJS). One place, applies everywhere.
+  php       Add a rate limiter at the framework level: Laravel's throttle middleware on the route group, or symfony/rate-limiter in a listener.
+  python    Add a rate limiter at the framework level: slowapi (FastAPI), Flask-Limiter (Flask), or django-ratelimit / DRF's DEFAULT_THROTTLE_RATES (Django). One place, applies to every route.
+  ruby      Add Rack::Attack as middleware - it throttles by IP or by any key you choose, in one place ahead of your routes.
+  rust      Add a rate-limiting layer to the service, not to each handler: tower-governor plugs into axum/tower as a Layer, built on the governor crate.
+no-schema-migrations
+  default   Adopt a migration tool (Flyway, Liquibase, Alembic, Prisma Migrate, Rails/Django migrations, golang-migrate or goose for Go, sqlx/refinery for Rust) and commit the migration files. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and only drop the old column in a later release.
+  dotnet    Adopt EF Core migrations and commit them: dotnet ef migrations add <Name>, applied with dotnet ef database update or MigrateAsync() at startup. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
+  go        Adopt a migration tool and commit the files: golang-migrate, goose, or Atlas. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
+  java      Adopt a migration tool and commit the files: Flyway or Liquibase, both with Spring Boot starters that run on startup. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
+  node      Adopt a migration tool and commit the files: Prisma Migrate, Knex migrations, TypeORM migrations, or node-pg-migrate. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
+  php       Adopt a migration tool and commit the files: Laravel migrations or Doctrine Migrations. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
+  python    Adopt a migration tool and commit the files: Alembic (SQLAlchemy) or Django's built-in migrations. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
+  ruby      Use Rails migrations (rails generate migration) and commit them. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
+  rust      Adopt a migration tool and commit the files: sqlx migrate (sqlx::migrate! runs them at startup), refinery, or diesel's migrations. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
+query-in-loop
+  default   If the loop iterates over something that can grow large (rows, users, orders), batch it into one query (a JOIN or an IN (...) lookup) before the loop. If it's a small, bounded set (collection names, config keys, admin metadata), this is likely fine - a static check can't tell rows from a bounded list apart, only you can.
+too-many-dependencies
+  default   Group the constructor's dependencies by which feature they serve. Each group that only ever gets used together is a class trying to split itself out - move it into its own collaborator and inject that instead.
+unbounded-list-query
+  default   Add a LIMIT/cursor to the query flagged below and a default page size in the handler - don't wait for the table to grow to find out where the response times out."
+`;
