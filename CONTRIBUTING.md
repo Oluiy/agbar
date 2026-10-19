@@ -11,7 +11,7 @@ git clone https://github.com/Oluiy/aggregator
 cd aggregator
 npm install
 npm run dev -- check path/to/a/repo   # run from source
-npm run verify                        # typecheck + all tests; must pass before a PR
+npm run verify                        # typecheck, lint, format, tests - the same gate CI runs
 ```
 
 Requires Node 18 or newer.
@@ -39,6 +39,17 @@ Rules live in `src/check/`. A rule change is not done until:
 Unit tests prove a rule works on examples written to make it work. Only real code shows
 where it is wrong.
 
+## Changing the advice a finding gives
+
+The `Next:` line is the part a reader acts on, so it is pinned by a snapshot
+(`src/check/advice.test.ts`). Editing a rule's `nextStep`, or any per-language advice in
+`stackAdvice.ts`, fails that test on purpose. Run `npx vitest -u src/check/advice.test.ts`
+and put the snapshot diff in your PR - that diff is the review.
+
+Advice names real packages and real API calls. Check the package still exists and still
+has that API before you write it; the snapshot proves nobody changed the advice unnoticed,
+not that the advice is right.
+
 ## Adding a lesson or concept
 
 Lessons and concepts are content, not code, and live under `content/` and
@@ -48,7 +59,7 @@ pass - the test suite enforces this.
 ## Pull requests
 
 - Keep one change per PR, and say why in the description.
-- Match the surrounding code's style; there is no separate formatter step.
+- Run `npm run format` before pushing. CI checks formatting and will fail the PR otherwise.
 - Don't commit generated output (`dist/`) or any real credentials.
 
 ## License

@@ -21,7 +21,7 @@
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "corpus": "node scripts/corpus.mjs",
-    "verify": "npm run typecheck && npm run lint && npm test",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "prepublishOnly": "npm run verify && npm run build"
   },
   "license": "MIT",
