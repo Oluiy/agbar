@@ -4,12 +4,13 @@ title: "LRU Cache: Deciding What to Throw Away"
 prerequisites: ["01-token-bucket"]
 core: true
 estimated_minutes: 25
+key_idea: "An LRU (least recently used) cache is a hash map plus an order of use - and a JavaScript Map is already both."
 explanation: |
   `buildquick concepts caching` says to put frequently-read data in memory. That
   raises the question every cache eventually has to answer: memory is finite, so
   when it's full, what gets evicted?
 
-  Least Recently Used is the default answer because it approximates something
+  Least recently used (LRU) is the default answer because it approximates something
   useful - data used recently is likely to be used again (temporal locality).
   When the cache is full, evict whatever hasn't been touched for the longest.
 
@@ -27,8 +28,8 @@ explanation: |
   structures well enough to avoid implementing a linked list is a real skill.
 
   LRU isn't always right. A single large scan touching every row will evict your
-  entire hot set - which is why real systems reach for LFU, ARC, or segmented
-  variants. Knowing the tradeoff matters more than knowing the implementation.
+  entire hot set - which is why real systems reach for least frequently used (LFU),
+  adaptive replacement cache (ARC), or segmented variants. Knowing the tradeoff matters more than knowing the implementation.
 example_code: |
   // Map remembers insertion order, and re-setting a key moves it to the end.
   const m = new Map();
@@ -70,7 +71,7 @@ challenges:
         }
       }
     check_type: "test_passes"
-    hidden_tests: |
+    graded_tests: |
       import test from "node:test";
       import assert from "node:assert/strict";
       import { LRUCache } from "./solution.js";

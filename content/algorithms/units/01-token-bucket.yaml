@@ -79,7 +79,7 @@ challenges:
         }
       }
     check_type: "test_passes"
-    hidden_tests: |
+    graded_tests: |
       import test from "node:test";
       import assert from "node:assert/strict";
       import { TokenBucket } from "./solution.js";
