@@ -55,12 +55,18 @@ export interface Challenge {
   expectedOutput?: string;
   hint?: string;
   /**
-   * For check_type: "test_passes". Rewritten into the workspace from this YAML on
-   * every submit, deliberately - the file sits in the learner's own directory, so
-   * editing it to pass would otherwise be trivial. Retrofitting that later is worse
-   * than doing it on day one.
+   * For check_type: "test_passes". The tests a submission is graded by.
+   *
+   * They are NOT hidden: the file lands in the learner's own workspace next to the
+   * solution, and reading it is fine - the prompt already specifies the behaviour, so
+   * the tests only restate it with concrete values. What they must not be is *edited*,
+   * which is why they are rewritten from this YAML on every scaffold. Hiding them
+   * instead would only make a failure harder to debug.
+   *
+   * The exception is predict_output, where seeing the answer IS the exercise; that
+   * checker keeps its expected output to itself.
    */
-  hiddenTests?: string;
+  gradedTests?: string;
   /** For check_type: "yaml_assertions". Lives in the lesson YAML, never in the learner's workspace. */
   assertions?: YamlAssertion[];
   /** For check_type: "regex_cases". */
@@ -90,6 +96,14 @@ export interface Unit {
   prerequisites: string[];
   core: boolean;
   estimatedMinutes: number;
+  /**
+   * One sentence: the thing to carry away if nothing else sticks.
+   *
+   * Optional, and deliberately so - it is a spine for skimming and a re-entry point when
+   * you come back to a half-finished lesson, not a summary that excuses reading. Lessons
+   * whose point genuinely needs a paragraph should leave it out rather than flatten it.
+   */
+  keyIdea?: string;
   explanation: string;
   exampleCode: string;
   challenges: Challenge[];
@@ -115,7 +129,7 @@ export interface Checker {
   /**
    * Create the scratch project for a challenge. Must preserve an existing solution
    * file (a learner's in-progress work survives re-running `learn`), but must
-   * rewrite hidden tests every time (see Challenge.hiddenTests).
+   * rewrite the graded tests every time (see Challenge.gradedTests).
    */
   scaffold(challenge: Challenge, workspaceDir: string): void;
   /**

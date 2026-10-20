@@ -34,11 +34,16 @@ function parseChallenge(raw: Record<string, unknown>, file: string, index: numbe
     throw new Error(`${where}: invalid check_type '${checkType}'. Use one of: ${VALID_CHECK_TYPES.join(", ")}.`);
   }
 
-  const hiddenTests = typeof raw.hidden_tests === "string" ? raw.hidden_tests : undefined;
+  // Checked before the "requires graded_tests" error below, which a stale lesson would
+  // otherwise hit first - naming the rename is far more useful than naming the symptom.
+  if (raw.hidden_tests !== undefined) {
+    throw new Error(`${where}: 'hidden_tests' is now 'graded_tests' - the file is written into the learner's workspace, so it was never hidden.`);
+  }
+  const gradedTests = typeof raw.graded_tests === "string" ? raw.graded_tests : undefined;
   // A test_passes challenge with no tests would silently pass nothing - catch it
   // at load time rather than at submit time.
-  if (checkType === "test_passes" && !hiddenTests) {
-    throw new Error(`${where}: check_type 'test_passes' requires 'hidden_tests'.`);
+  if (checkType === "test_passes" && !gradedTests) {
+    throw new Error(`${where}: check_type 'test_passes' requires 'graded_tests'.`);
   }
   if (checkType === "predict_output" && typeof raw.expected_output !== "string") {
     throw new Error(`${where}: check_type 'predict_output' requires 'expected_output' - the output the learner has to predict.`);
@@ -58,7 +63,7 @@ function parseChallenge(raw: Record<string, unknown>, file: string, index: numbe
     checkType: checkType as CheckType,
     expectedOutput: typeof raw.expected_output === "string" ? raw.expected_output : undefined,
     hint: typeof raw.hint === "string" ? raw.hint : undefined,
-    hiddenTests,
+    gradedTests,
     assertions: checkType === "yaml_assertions" ? parseAssertions(raw.assertions, where) : undefined,
     regexCases: checkType === "regex_cases" ? parseRegexCases(raw.regex_cases, where) : undefined,
   };
@@ -106,6 +111,7 @@ function parseUnit(raw: Record<string, unknown>, file: string): Unit {
     prerequisites: Array.isArray(raw.prerequisites) ? (raw.prerequisites as string[]) : [],
     core: raw.core === true,
     estimatedMinutes: typeof raw.estimated_minutes === "number" ? raw.estimated_minutes : 0,
+    keyIdea: typeof raw.key_idea === "string" ? raw.key_idea.trim() : undefined,
     explanation,
     exampleCode,
     challenges: rawChallenges.map((c, i) => parseChallenge(c as Record<string, unknown>, file, i)),

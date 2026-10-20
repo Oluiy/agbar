@@ -138,6 +138,10 @@ export function printUnitDetail(language: string, unitId: string): void {
   console.log(`\n${heading(unit.title)}`);
   console.log(dim(`${language} · lesson ${at} of ${units.length}${mins} · ${n} challenge${n === 1 ? "" : "s"}`));
 
+  // Before the prose, not inside it: a reader who skims gets the spine, and a reader
+  // returning to a half-finished lesson re-enters without re-reading the explanation.
+  if (unit.keyIdea) console.log(`\n${attention(unit.keyIdea)}`);
+
   console.log(`\n${heading("What to know")}\n`);
   console.log(emphasize(unit.explanation.trim()));
   console.log(`\n${heading("Example")}\n\n${codeBlock(unit.exampleCode)}`);
