@@ -59,7 +59,7 @@ challenges:
       }
     check_type: "test_passes"
     hint: "Trace page 1 with pageSize 2: which index should it start at, and which does it start at?"
-    hidden_tests: |
+    graded_tests: |
       import test from "node:test";
       import assert from "node:assert/strict";
       import { getPage } from "./solution.js";

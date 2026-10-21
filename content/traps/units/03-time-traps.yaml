@@ -22,7 +22,7 @@ explanation: |
 
   **Measure durations with a monotonic clock** - one that only ever moves
   forward, whatever happens to the time of day. The wall clock (`Date.now()`,
-  `time.time()`) can jump backwards when NTP corrects it, making `end - start`
+  `time.time()`) can jump backwards when the clock-sync service (NTP) corrects it, making `end - start`
   negative. Use `performance.now()`, `time.monotonic()`, `System.nanoTime()`,
   or .NET's `Stopwatch`.
 
@@ -70,7 +70,7 @@ challenges:
       }
     check_type: "test_passes"
     hint: "Copy the date, then move the calendar day with setDate(getDate() + 1) - the date API handles the short day for you."
-    hidden_tests: |
+    graded_tests: |
       process.env.TZ = "America/New_York";
       import test from "node:test";
       import assert from "node:assert/strict";
@@ -102,7 +102,7 @@ review_questions:
     question: "Which kind of clock should you use to measure how long something took: wall clock or monotonic?"
     answer: "monotonic"
     accept: ["a monotonic clock", "monotonic clock"]
-    explain: "The wall clock can jump backwards when NTP adjusts it."
+    explain: "The wall clock can jump backwards when the clock-sync service (NTP) adjusts it."
   - id: "js-month"
     question: "In JavaScript's Date, what number is February?"
     answer: "1"

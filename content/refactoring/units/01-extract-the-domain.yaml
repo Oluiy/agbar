@@ -74,7 +74,7 @@ challenges:
       // Export calculateOrderTotal(items, discountCode) as a pure function,
       // and make handleCheckout use it.
     check_type: "test_passes"
-    hidden_tests: |
+    graded_tests: |
       import test from "node:test";
       import assert from "node:assert/strict";
       import { calculateOrderTotal, handleCheckout } from "./solution.js";

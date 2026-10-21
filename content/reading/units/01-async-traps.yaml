@@ -76,7 +76,7 @@ challenges:
       }
     check_type: "test_passes"
     hint: "Who awaits the promises the forEach callbacks return? Nobody - so `return total` runs first."
-    hidden_tests: |
+    graded_tests: |
       import test from "node:test";
       import assert from "node:assert/strict";
       import { totalPrice } from "./solution.js";

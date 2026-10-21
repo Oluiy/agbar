@@ -62,7 +62,7 @@ challenges:
       }
     check_type: "test_passes"
     hint: "sort() reorders the array it's called on. Sort a copy instead."
-    hidden_tests: |
+    graded_tests: |
       import test from "node:test";
       import assert from "node:assert/strict";
       import { topThree } from "./solution.js";

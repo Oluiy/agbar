@@ -70,7 +70,7 @@ challenges:
       }
     check_type: "test_passes"
     hint: "Take path.basename of the name (after turning backslashes into slashes), refuse '', '.' and '..', then join."
-    hidden_tests: |
+    graded_tests: |
       import test from "node:test";
       import assert from "node:assert/strict";
       import path from "node:path";

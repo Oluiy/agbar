@@ -67,7 +67,7 @@ challenges:
       }
     check_type: "test_passes"
     hint: "Turn each string into integer cents (split on '.' - don't multiply a float by 100), add integers, then format cents back as dollars.cents."
-    hidden_tests: |
+    graded_tests: |
       import test from "node:test";
       import assert from "node:assert/strict";
       import { addMoney } from "./solution.js";
