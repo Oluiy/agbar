@@ -22,7 +22,7 @@ function challenge(overrides: Partial<Challenge> = {}): Challenge {
     prompt: "",
     starterCode: "export const answer = 0;\n",
     checkType: "test_passes",
-    hiddenTests: `
+    gradedTests: `
 import test from "node:test";
 import assert from "node:assert/strict";
 import { answer } from "./solution.js";
@@ -77,7 +77,7 @@ describe("nodeChecker.run", () => {
   // and the summary used to print the literal "|-" instead of the message.
   it("extracts a multi-line assertion message, never the YAML block marker", async () => {
     const c = challenge({
-      hiddenTests: `
+      gradedTests: `
 import test from "node:test";
 import assert from "node:assert/strict";
 import { answer } from "./solution.js";
@@ -104,7 +104,7 @@ describe.each(["algorithms", "refactoring"])("the bundled %s units", (language) 
     for (const unit of units) {
       for (const c of unit.challenges) {
         expect(c.checkType).toBe("test_passes");
-        expect(c.hiddenTests, `${unit.id}/${c.id} has no hidden tests`).toBeTruthy();
+        expect(c.gradedTests, `${unit.id}/${c.id} has no graded tests`).toBeTruthy();
       }
     }
   });

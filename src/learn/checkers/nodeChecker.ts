@@ -34,9 +34,10 @@ export const nodeChecker: Checker = {
 
     // Always rewritten, never preserved: the tests live in the learner's own
     // directory, so if they were left alone, editing them to pass would be the
-    // path of least resistance.
-    if (challenge.hiddenTests) {
-      writeFile(path.join(workspaceDir, "solution.test.js"), challenge.hiddenTests);
+    // path of least resistance. Reading them is fine, and useful when a run fails -
+    // only editing them is the shortcut worth closing.
+    if (challenge.gradedTests) {
+      writeFile(path.join(workspaceDir, "solution.test.js"), challenge.gradedTests);
     }
   },
 
@@ -44,8 +45,8 @@ export const nodeChecker: Checker = {
     if (challenge.checkType !== "test_passes") {
       return { passed: false, message: `The JavaScript checker only supports check_type 'test_passes', not '${challenge.checkType}'.` };
     }
-    if (!challenge.hiddenTests) {
-      return { passed: false, message: `Challenge '${challenge.id}' is check_type 'test_passes' but defines no hidden_tests.` };
+    if (!challenge.gradedTests) {
+      return { passed: false, message: `Challenge '${challenge.id}' is check_type 'test_passes' but defines no graded_tests.` };
     }
 
     return new Promise<CheckResult>((resolve) => {
