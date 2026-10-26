@@ -152,12 +152,13 @@ async def get_user(id: int):
       },
       {
         language: "Node (Express, Fastify, NestJS)",
-        code: `app.get("/report", (req, res) => {
-  const data = readFileSync(path);            // bad: freezes the only loop
-  const data = await readFile(path);          // good: fs/promises
-  const hash = crypto.pbkdf2Sync(pw, salt);   // bad: CPU-bound, blocks everyone
-  crypto.pbkdf2(pw, salt, ..., cb);           // good: async variant
-});`,
+        code: `// Bad: both freeze the only event loop, for every request
+const report = readFileSync(path);
+const key = pbkdf2Sync(pw, salt, 600000, 32, "sha256");
+
+// Good: async variants hand the work off and let the loop keep serving
+const report2 = await readFile(path);
+const key2 = await promisify(pbkdf2)(pw, salt, 600000, 32, "sha256");`,
       },
       {
         language: "C# (ASP.NET Core)",
@@ -271,5 +272,38 @@ const v1 = { fullName: "Ada Lovelace" };
 const badV2 = { name: "Ada Lovelace" };
 // Good: v2 adds the new field and keeps the old one until every consumer moved
 const goodV2 = { name: "Ada Lovelace", fullName: "Ada Lovelace" };`,
+  },
+  {
+    id: "cancellation-propagation",
+    title: "Cancellation (work nobody is waiting for)",
+    category: "Runtime & Concurrency",
+    failureScenario:
+      "A client gives up after 3 seconds and disconnects. The server never finds out: the database query runs to completion, the three upstream calls it fans out to still happen, and the result is written to a socket that closed long ago. Under load this is how a service collapses - every timed-out request leaves its work running, so the queue grows faster than it drains even though no one is waiting for any of it.",
+    fix: "Pass a cancellation signal down the whole call chain and have every blocking step honour it - Go's context.Context, an AbortSignal in Node, a CancellationToken in .NET, a cancelled Tokio task in Rust. A goroutine or task that cannot be told to stop is a leak with a long fuse. Check for cancellation before expensive steps as well as during them, and treat it as neither success nor failure: nothing went wrong, the answer simply stopped being wanted.",
+    whenToUse:
+      "Not everything should be cancellable. Work that has already changed state - a payment taken, a row written - usually has to finish or be undone deliberately, so cancel the read path and the fan-out freely, and give writes a transaction or an idempotency key instead.",
+    examples: [
+      {
+        language: "Go",
+        code: `// Bad: the goroutine outlives the request and blocks forever on send
+go func() { results <- expensive() }()
+
+// Good: it stops when the request's context is cancelled
+go func() {
+    select {
+    case results <- expensive():
+    case <-ctx.Done():   // client gone; nothing is reading results
+    }
+}()`,
+      },
+      {
+        language: "Node",
+        code: `// Bad: the upstream call runs on after the client disconnects
+const data = await fetch(url);
+
+// Good: the client going away aborts the work it caused
+const live = await fetch(url, { signal: AbortSignal.any([req.signal, AbortSignal.timeout(2000)]) });`,
+      },
+    ],
   },
 ];

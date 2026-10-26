@@ -181,4 +181,31 @@ pg_restore --dbname=mydb_restore_test backup-2026-09-01.dump`,
       "Anything that runs more than one instance or deploys without downtime, which in practice means anything on Kubernetes, ECS, or a rolling deploy of any kind. Doubly so for queue workers: a consumer that dies holding a claimed job either duplicates it or strands it, depending on your broker's redelivery rules.",
     references: [{ title: "Kubernetes: pod termination lifecycle", url: "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination" }],
   },
+  {
+    id: "error-handling",
+    title: "Mishandling exceptional conditions",
+    category: "Reliability",
+    failureScenario:
+      "A catch block logs and carries on. The write failed, but the handler returns 200, so the caller believes it saved and never retries - the data is simply gone. Elsewhere the opposite: an unexpected error escapes to the client with a stack trace naming the ORM, the file path and the query. Both are the same root mistake - the failure path got less thought than the happy one, so the system lies about what happened.",
+    fix: "Decide per failure whether it is recoverable, and act on that decision: retry what is transient, fail the request for what is not, and never swallow an error to keep a response looking clean. Let unexpected exceptions reach one handler at the edge that logs the detail server-side and returns a generic message with an id the user can quote. Catch the specific error you can do something about, not every error. Make sure a failure cannot leave a half-finished write behind - that is what transactions and idempotency keys are for.",
+    whenToUse:
+      "The judgement is which errors are worth catching close to where they happen. A catch that only logs and rethrows adds noise; a catch that turns a failure into a wrong answer is worse than a crash, because a crash gets noticed.",
+    example: `// Bad: the failure disappears and the caller is told it worked
+try {
+  await saveOrder(order);
+} catch (err) {
+  console.log(err);
+}
+return res.json({ ok: true });
+
+// Good: handle what you can, surface the rest, leak nothing
+try {
+  await saveOrder(order);
+  return res.json({ ok: true });
+} catch (err) {
+  if (err instanceof DuplicateKeyError) return res.status(409).json({ error: "already exists" });
+  throw err;   // one edge handler logs it and returns a generic 500 + trace id
+}`,
+    references: [{ title: "OWASP Top 10:2025 - A10 Mishandling of Exceptional Conditions", url: "https://top10.owasp.org/2025/" }],
+  },
 ];

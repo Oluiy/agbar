@@ -128,4 +128,63 @@ await tools[call.tool]({ ...call.args, userId: session.userId });   // never arg
       { title: "OWASP Top 10:2025 - A01 Broken Access Control", url: "https://top10.owasp.org/2025/" },
     ],
   },
+  {
+    id: "injection",
+    title: "Injection (data read as code)",
+    category: "Security",
+    failureScenario:
+      "A search endpoint builds SQL by pasting the query string into it. Someone searches for ' OR 1=1 -- and gets every row; someone less friendly searches for '; DROP TABLE orders; --. The database was never confused - it did exactly what the finished string said. The same shape bites outside SQL: a shell command built by concatenation, a NoSQL filter built from a JSON body, an LDAP or XPath query built by hand.",
+    fix: "Never build a query by concatenating input. Use parameters and let the driver send code and data separately - the value can then never be parsed as syntax, however it is spelled. For shell work, pass an argument array rather than a command string, so there is no shell to interpret it. Where the variable part is a table or column name, parameters cannot help: check it against an allow-list of names you wrote, never against a pattern.",
+    whenToUse:
+      "Escaping functions and input filters are the trap here: they put you in the business of out-guessing a parser, and encodings keep finding ways through. Parameters remove the question. The one place judgement is needed is dynamic identifiers - sort columns, table names - where an allow-list is the only real answer.",
+    example: `// Bad: the value becomes part of the SQL text
+const rows = await db.query(\`SELECT * FROM users WHERE email = '\${email}'\`);
+
+// Good: the driver sends the query and the value separately
+const safe = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+
+// Sort column cannot be a parameter - allow-list it
+const SORTABLE = new Set(["created_at", "name"]);
+if (!SORTABLE.has(sort)) throw new Error("bad sort column");`,
+    references: [{ title: "OWASP Top 10:2025 - A05 Injection", url: "https://top10.owasp.org/2025/" }],
+  },
+  {
+    id: "object-level-authorization",
+    title: "Object-level authorization (can this user touch THIS row?)",
+    category: "Security",
+    failureScenario:
+      "GET /api/invoices/8142 checks that you are signed in, then returns invoice 8142. Nothing checks that it is yours. Changing the number in the URL walks the whole table, one customer at a time, and every request looks legitimate in the logs because it was authenticated. This is the most common API vulnerability there is, and it is invisible to tests that only ever use one account.",
+    fix: "Authorise the object, not just the endpoint. Scope the lookup to the caller so an unauthorised row is never loaded in the first place - WHERE id = $1 AND owner_id = $2 - rather than loading it and remembering to compare afterwards. Return 404 rather than 403 for rows that are not theirs, so the API does not confirm which ids exist. Guessable sequential ids make the walk trivial, so prefer opaque ones for anything user-facing.",
+    whenToUse:
+      "Every endpoint that takes an id from the caller, which in practice is most of them. The reason it keeps shipping is that it passes every test written by one logged-in user - so write the test with two accounts, where B asks for A's row and must not get it.",
+    example: `// Bad: authenticated, but not authorised for this row
+const invoice = await db.invoice.findUnique({ where: { id } });
+
+// Good: ownership is part of the lookup, so the wrong row never loads
+const owned = await db.invoice.findFirst({ where: { id, ownerId: session.userId } });
+if (!owned) return res.status(404).end();   // 404, not 403: do not confirm it exists`,
+    references: [{ title: "OWASP Top 10:2025 - A01 Broken Access Control", url: "https://top10.owasp.org/2025/" }],
+  },
+  {
+    id: "authentication-failures",
+    title: "Storing and checking passwords",
+    category: "Security",
+    failureScenario:
+      "A database backup leaks. Passwords were stored as SHA-256 with no salt, because it is 'a hash'. SHA-256 is built to be fast, so a consumer GPU works through billions of guesses a second, and the common passwords fall in minutes. Because people reuse passwords, the breach is not only yours.",
+    fix: "Use a password hash built to be slow and memory-hard - argon2id, scrypt, or bcrypt - through your platform's library, which salts each one for you. Never design the scheme yourself. Compare with the library's verify function, which is constant-time. Keep the work factor high enough that hashing costs tens of milliseconds on your own hardware, and raise it as hardware gets faster. Rate-limit and lock out by account as well as by IP, or an attacker just tries one password against every user instead.",
+    whenToUse:
+      "If you can avoid storing passwords at all - delegating to an identity provider - that is a smaller problem to own. Once you do store them, there is no tradeoff to weigh: a general-purpose hash like SHA-256 or MD5 is simply the wrong tool, however many times it is iterated.",
+    example: `import { hash, verify } from "@node-rs/argon2";
+
+// Bad: fast hash, no salt - a GPU reverses the common ones
+const stored = createHash("sha256").update(password).digest("hex");
+
+// Good: slow, salted, constant-time compare
+const safe = await hash(password);
+const ok = await verify(safe, password);`,
+    references: [
+      { title: "OWASP Top 10:2025 - A07 Authentication Failures", url: "https://top10.owasp.org/2025/" },
+      { title: "OWASP Password Storage Cheat Sheet", url: "https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html" },
+    ],
+  },
 ];

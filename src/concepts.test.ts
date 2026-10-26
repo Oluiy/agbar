@@ -5,8 +5,8 @@ import { RULES } from "./check/rules.js";
 import { loadUnits } from "./learn/loader.js";
 
 describe("BACKEND_CONCEPTS", () => {
-  it("has exactly the 78 concepts: 43 backend concepts plus 35 small traps", () => {
-    expect(BACKEND_CONCEPTS).toHaveLength(78);
+  it("has exactly the 83 concepts: 48 backend concepts plus 35 small traps", () => {
+    expect(BACKEND_CONCEPTS).toHaveLength(83);
   });
 
   it("every 'practise it' command points at a lesson unit that really exists", () => {
@@ -36,14 +36,22 @@ describe("BACKEND_CONCEPTS", () => {
     // Constructing an AsyncFunction parses the body without running it - in
     // process, so no child processes to time out under a busy test run.
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor as new (body: string) => unknown;
-    const jsExamples = BACKEND_CONCEPTS.filter((c) => c.example && /^(\/\/|const |import |app\.|if |process\.|async |for |await )/.test(c.example));
+    const looksLikeJs = (code: string) => /^(\/\/|const |import |app\.|if |process\.|async |for |await )/.test(code);
+    // Per-runtime examples are checked too: a JS snippet is no safer for sitting in
+    // `examples` rather than `example`, and that is where the Node versions now live.
+    const jsExamples = BACKEND_CONCEPTS.flatMap((c) => [
+      ...(c.example && looksLikeJs(c.example) ? [{ id: c.id, example: c.example }] : []),
+      ...(c.examples ?? [])
+        .filter((ex) => /Node|JavaScript|TypeScript/i.test(ex.language) && looksLikeJs(ex.code))
+        .map((ex) => ({ id: `${c.id} (${ex.language})`, example: ex.code })),
+    ]);
     expect(jsExamples.length).toBeGreaterThan(15);
     for (const c of jsExamples) {
       // Snippets are fragments: wrap them in an async function so a top-level
       // `return` or `await` parses, and drop imports, which can't live in one.
       // Some examples compare languages (JS, then Go, then Python). Only the JS
       // part is JS: stop at the first "// Go" / "# Python" style section header.
-      const lines = c.example!.split("\n");
+      const lines = c.example.split("\n");
       const otherLanguage = lines.findIndex((l) => /^(\/\/|#) ?(Go|Python|C#|Java|Rust)\b/.test(l));
       const body = (otherLanguage === -1 ? lines : lines.slice(0, otherLanguage))
         .filter((l) => !/^import /.test(l))
@@ -82,6 +90,11 @@ describe("BACKEND_CONCEPTS", () => {
     expect(ids).toEqual(
       [
         "supply-chain-security",
+        "injection",
+        "object-level-authorization",
+        "authentication-failures",
+        "error-handling",
+        "cancellation-propagation",
         "prompt-injection",
         "idempotency-keys",
         "database-indexing",
