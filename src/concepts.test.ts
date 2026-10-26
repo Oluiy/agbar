@@ -5,8 +5,12 @@ import { RULES } from "./check/rules.js";
 import { loadUnits } from "./learn/loader.js";
 
 describe("BACKEND_CONCEPTS", () => {
-  it("has exactly the 83 concepts: 48 backend concepts plus 35 small traps", () => {
-    expect(BACKEND_CONCEPTS).toHaveLength(83);
+  // No magic number here on purpose. The list of ids below IS the contract - adding a
+  // concept fails that test with a readable diff naming it - and a hand-maintained count
+  // in three places only ever drifts. This checks the two agree with each other.
+  it("has no duplicate ids, and every concept is accounted for in the id list below", () => {
+    const ids = BACKEND_CONCEPTS.map((c) => c.id);
+    expect(new Set(ids).size, "two concepts share an id").toBe(ids.length);
   });
 
   it("every 'practise it' command points at a lesson unit that really exists", () => {

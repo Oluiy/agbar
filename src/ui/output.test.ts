@@ -6,6 +6,7 @@ import { printConceptDetail, printConceptsList } from "../conceptsCommand.js";
 import { printLearnLanguages, printUnitDetail, printUnitList } from "../learn/learnCommand.js";
 import { printTrackDetail, printTracksList } from "../learn/tracksCommand.js";
 import { nextStep, progress, shortPath } from "./palette.js";
+import { BACKEND_CONCEPTS } from "../concepts/index.js";
 
 /** What each screen actually prints, colour stripped - so these assert structure, not escape codes. */
 let home: string;
@@ -95,7 +96,7 @@ describe("concept screens", () => {
   it("the list lines the ids up in a column - the thing you type - under each topic heading", () => {
     printConceptsList();
     const t = text();
-    expect(t).toMatch(/Concepts\s+83 across \d+ topics/);
+    expect(t).toMatch(new RegExp(`Concepts\\s+${BACKEND_CONCEPTS.length} across \\d+ topics`));
     expect(t).toMatch(/Design \(6\)/);
     const lines = t.split("\n").filter((l) => /^ {2}\S.*\s{2}[a-z-]+$/.test(l));
     expect(lines.length).toBeGreaterThan(60);
