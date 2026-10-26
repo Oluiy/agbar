@@ -35,7 +35,7 @@ function firstUnboundedSelectStar(repo: RepoSnapshot) {
 /**
  * SQL built by pasting a variable into the query text, rather than passed as a parameter.
  *
- * SQL is text, not code, so this reads the raw line (see the matcher note in the maintainer notes:
+ * SQL is text, not code, so this reads the raw line (the matcher convention:
  * code-only matching strips string contents, which is where every query lives). That
  * makes a narrow test essential, so a line must do all four:
  *   - call something that executes a query (.query/.execute/raw/$queryRaw);
