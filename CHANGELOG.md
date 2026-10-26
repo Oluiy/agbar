@@ -10,7 +10,7 @@ First public release.
 
 ### Added
 
-- **`buildquick check`**: grades a repo against 15 rules for production problems - leaked
+- **`buildquick check`**: grades a repo against 16 rules for production problems - leaked
   secrets, missing timeouts, N+1 queries, unbounded list queries, no rate limiting, no
   health check, no migrations, oversized files, and more. Each finding has a severity, a
   file and line, a next step, and a link to a concept.
