@@ -34,6 +34,9 @@ const CHECKERS: Record<string, Checker> = {
   // Regular expressions: write patterns graded against must-match / must-reject
   // cases, and predict what tricky regex code prints.
   regex: compositeChecker({ regex_cases: regexChecker, predict_output: predictionChecker }),
+  // Authorisation bugs, graded by behaviour: the tests use two accounts, because a
+  // suite written by one logged-in user passes whether or not the check exists.
+  security: nodeChecker,
   // The small traps that break production: text, numbers, time, APIs, files.
   traps: compositeChecker({ predict_output: predictionChecker, test_passes: nodeChecker }),
 };

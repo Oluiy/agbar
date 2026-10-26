@@ -163,6 +163,7 @@ const invoice = await db.invoice.findUnique({ where: { id } });
 // Good: ownership is part of the lookup, so the wrong row never loads
 const owned = await db.invoice.findFirst({ where: { id, ownerId: session.userId } });
 if (!owned) return res.status(404).end();   // 404, not 403: do not confirm it exists`,
+    practice: "buildquick learn security 01-object-level-authorization",
     references: [{ title: "OWASP Top 10:2025 - A01 Broken Access Control", url: "https://top10.owasp.org/2025/" }],
   },
   {

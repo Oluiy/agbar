@@ -1,0 +1,99 @@
+id: "01-object-level-authorization"
+chapter_ref: 1
+title: "Whose Row Is It? Authorising the Object, Not the Endpoint"
+prerequisites: []
+core: true
+estimated_minutes: 20
+key_idea: "Checking that someone is signed in is not checking that the row is theirs - and a test with one account can never tell the difference."
+explanation: |
+  Almost every endpoint that takes an id from the caller has this shape:
+  look the row up, return it. The authentication middleware already ran, so
+  the request is from a real, signed-in user. It is easy to stop thinking
+  there.
+
+  But **authenticated is not authorised**. `GET /invoices/8142` proves who is
+  asking; it proves nothing about whose invoice 8142 is. Changing the number
+  in the URL walks the table one customer at a time, and every single request
+  looks legitimate in the logs, because every one of them was signed in.
+
+  This is the most common API vulnerability there is, and the reason it keeps
+  shipping is not ignorance - it is the test suite. Tests are written by one
+  logged-in user asking for their own rows, and that passes whether or not the
+  check exists. The bug is invisible until a second account asks for the first
+  account's data.
+
+  The fix is to make ownership part of the lookup rather than an `if` after it.
+  If the query itself says "this id **and** this owner", the wrong row is never
+  loaded, so there is no window in which you hold data you should not and have
+  to remember to check it. Return **404 rather than 403** for rows that are not
+  theirs: a 403 confirms the id exists, which is free reconnaissance.
+example_code: |
+  // The lookup carries the owner, so an unauthorised row never loads.
+  const invoice = await db.invoice.findFirst({
+    where: { id, ownerId: session.userId },
+  });
+  if (!invoice) return res.status(404).end();
+challenges:
+  - id: "scope-the-lookup"
+    prompt: |
+      Fix `getNote` so a user can only read their own note.
+
+      `notes` is an array of `{ id, ownerId, text }`. Export one function:
+
+      - `getNote(notes, id, userId)` - returns the note when it belongs to
+        `userId`, and `null` when it does not exist **or** belongs to someone
+        else. Those two cases must be indistinguishable to the caller, for the
+        same reason the real endpoint returns 404 rather than 403.
+    starter_code: |
+      export function getNote(notes, id, userId) {
+        // Authenticated, but not authorised: this returns anyone's note.
+        return notes.find((n) => n.id === id) ?? null;
+      }
+    check_type: "test_passes"
+    graded_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { getNote } from "./solution.js";
+
+      const notes = [
+        { id: 1, ownerId: "ada", text: "mine" },
+        { id: 2, ownerId: "grace", text: "hers" },
+      ];
+
+      test("the owner still gets their own note", () => {
+        assert.deepEqual(getNote(notes, 1, "ada"), { id: 1, ownerId: "ada", text: "mine" });
+      });
+
+      test("a second account cannot read the first account's note", () => {
+        assert.equal(getNote(notes, 1, "grace"), null);
+      });
+
+      test("a note that does not exist is indistinguishable from one you may not see", () => {
+        assert.equal(getNote(notes, 999, "ada"), null);
+        assert.equal(getNote(notes, 2, "ada"), null);
+      });
+
+      test("ownership is not guessable from a different user id", () => {
+        assert.equal(getNote(notes, 2, "ADA"), null);
+        assert.equal(getNote(notes, 2, ""), null);
+      });
+    hint: "Match on both fields at once: notes.find((n) => n.id === id && n.ownerId === userId). Returning null for both 'missing' and 'not yours' is the point, not an accident."
+review_questions:
+  - id: "why-404"
+    question: "Why return 404 instead of 403 when a row exists but is not the caller's?"
+    answer: "403 confirms the id exists"
+    accept:
+      - "it confirms the row exists"
+      - "403 tells them it exists"
+      - "avoid leaking which ids exist"
+    explain: "A 403 says 'this exists, but not for you', which hands an attacker a working list of ids. A 404 says nothing at all."
+  - id: "why-tests-miss-it"
+    question: "Why does a test suite usually fail to catch a missing ownership check?"
+    answer: "the tests use only one account"
+    accept:
+      - "one user"
+      - "single account"
+      - "tests only ask for their own rows"
+    explain: "With one logged-in user asking for their own rows, the check being absent makes no difference. It takes a second account to see it."
+project_tiein:
+  note: "Every endpoint in the project you scaffolded that takes an :id from the URL has this question to answer. Run buildquick concepts object-level-authorization for the version with a database behind it."

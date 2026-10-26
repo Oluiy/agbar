@@ -7,6 +7,7 @@ import { printLearnLanguages, printUnitDetail, printUnitList } from "../learn/le
 import { printTrackDetail, printTracksList } from "../learn/tracksCommand.js";
 import { nextStep, progress, shortPath } from "./palette.js";
 import { BACKEND_CONCEPTS } from "../concepts/index.js";
+import { SUPPORTED_LEARN_LANGUAGES } from "../learn/learnCommand.js";
 
 /** What each screen actually prints, colour stripped - so these assert structure, not escape codes. */
 let home: string;
@@ -44,7 +45,7 @@ describe("palette helpers", () => {
 describe("learn screens", () => {
   it("the course list shows each course's size and YOUR progress, and ends on a next step", () => {
     printLearnLanguages();
-    expect(text()).toMatch(/Courses\s+7 courses/);
+    expect(text()).toMatch(new RegExp(`Courses\\s+${SUPPORTED_LEARN_LANGUAGES.length} courses`));
     expect(text()).toMatch(/traps\s+4 lessons · 0 of 4 done/);
     expect(text()).toMatch(/Next: new here\? a guided path: buildquick tracks first-steps/);
   });
