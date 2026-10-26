@@ -146,6 +146,7 @@ const safe = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 // Sort column cannot be a parameter - allow-list it
 const SORTABLE = new Set(["created_at", "name"]);
 if (!SORTABLE.has(sort)) throw new Error("bad sort column");`,
+    practice: "buildquick learn security 02-injection",
     references: [{ title: "OWASP Top 10:2025 - A05 Injection", url: "https://top10.owasp.org/2025/" }],
   },
   {

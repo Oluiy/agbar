@@ -1,0 +1,109 @@
+id: "02-injection"
+chapter_ref: 2
+title: "Parameters, Not Quotes: Keeping Data Out of the Query"
+prerequisites: ["01-object-level-authorization"]
+core: true
+estimated_minutes: 20
+key_idea: "Escaping tries to out-guess a parser; parameters remove the question by never letting the value be parsed as code at all."
+explanation: |
+  A query built by pasting a value into the string has already lost. The
+  database receives one finished piece of text and does exactly what it says -
+  it was never confused, and it has no way to know which characters you meant
+  as data.
+
+  The instinct is to sanitise: strip quotes, escape them, reject anything that
+  looks dangerous. That puts you in the business of out-guessing a parser, and
+  parsers have more corner cases than you have patience - different quoting
+  rules, different encodings, comment syntax you had not thought of.
+
+  **Parameters remove the question.** The driver sends the statement and the
+  values over separate channels, so the value is never part of the query text
+  and cannot become syntax however it is spelled. It is also less code than
+  escaping.
+
+  One case parameters cannot help with: a **table or column name** cannot be a
+  parameter, because it is structure, not data. Sort columns are the usual
+  version of this - `ORDER BY ${sort}` is injectable, and no amount of quoting
+  fixes it. The answer there is an **allow-list** of names you wrote yourself,
+  checked with an exact match. Not a pattern, not a blocklist: a list.
+example_code: |
+  // The value rides alongside the query, never inside it.
+  const rows = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+
+  // Structure cannot be a parameter, so allow-list it.
+  const SORTABLE = new Set(["created_at", "name"]);
+  if (!SORTABLE.has(sort)) throw new Error("bad sort column");
+challenges:
+  - id: "parameterise-the-query"
+    prompt: |
+      Rewrite `buildUserQuery` so no caller-supplied value lands in the SQL
+      text, and the sort column cannot be anything you did not choose.
+
+      Export one function:
+
+      - `buildUserQuery(email, sort)` - returns `{ sql, params }`.
+        - `sql` must contain the placeholder `$1` where the email goes, and must
+          NOT contain the email itself.
+        - `params` must be `[email]`.
+        - `sort` may only be `"created_at"` or `"name"`. Anything else must
+          throw an `Error` - do not fall back to a default, because silently
+          sorting by the wrong column hides the bug.
+    starter_code: |
+      export function buildUserQuery(email, sort) {
+        // Both halves are wrong: the email becomes SQL text, and `sort` is
+        // whatever the caller sent.
+        return {
+          sql: `SELECT * FROM users WHERE email = '${email}' ORDER BY ${sort}`,
+          params: [],
+        };
+      }
+    check_type: "test_passes"
+    graded_tests: |
+      import test from "node:test";
+      import assert from "node:assert/strict";
+      import { buildUserQuery } from "./solution.js";
+
+      test("the email is a parameter, not part of the query text", () => {
+        const { sql, params } = buildUserQuery("ada@example.com", "name");
+        assert.ok(sql.includes("$1"), "sql should use the $1 placeholder");
+        assert.ok(!sql.includes("ada@example.com"), "the email must not appear in the sql");
+        assert.deepEqual(params, ["ada@example.com"]);
+      });
+
+      test("a quote in the value cannot break out, because it never reaches the sql", () => {
+        const attack = "' OR 1=1 --";
+        const { sql, params } = buildUserQuery(attack, "name");
+        assert.ok(!sql.includes("OR 1=1"), "the payload must not appear in the sql");
+        assert.deepEqual(params, [attack]);
+      });
+
+      test("the allowed sort columns still work", () => {
+        assert.ok(buildUserQuery("a@b.c", "name").sql.includes("name"));
+        assert.ok(buildUserQuery("a@b.c", "created_at").sql.includes("created_at"));
+      });
+
+      test("any other sort column is rejected, not defaulted", () => {
+        assert.throws(() => buildUserQuery("a@b.c", "password"));
+        assert.throws(() => buildUserQuery("a@b.c", "name; DROP TABLE users"));
+        assert.throws(() => buildUserQuery("a@b.c", ""));
+      });
+    hint: "Keep the email out of the string entirely: sql uses $1 and params is [email]. For sort, check an exact match against a Set of the two names you allow, and throw when it is not in it."
+review_questions:
+  - id: "why-not-escaping"
+    question: "Why are parameters preferred over escaping the value yourself?"
+    answer: "the value never becomes part of the query text"
+    accept:
+      - "it is never parsed as sql"
+      - "sent separately"
+      - "escaping has to out-guess the parser"
+    explain: "Escaping tries to anticipate every way a parser can be fooled. Parameters send the value on a separate channel, so there is nothing to anticipate."
+  - id: "sort-column"
+    question: "Why can a sort column not be passed as a parameter, and what do you do instead?"
+    answer: "it is structure, not data - use an allow-list"
+    accept:
+      - "allow-list"
+      - "allowlist"
+      - "a list of column names you wrote"
+    explain: "Parameters carry values. A column name is part of the statement's structure, so the only safe check is an exact match against names you chose."
+project_tiein:
+  note: "buildquick check flags this as sql-string-concatenation. Run it on the project you scaffolded to see whether any query builds its text from a value."
