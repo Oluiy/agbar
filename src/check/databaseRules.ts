@@ -32,6 +32,53 @@ function firstUnboundedSelectStar(repo: RepoSnapshot) {
   return undefined;
 }
 
+/**
+ * SQL built by pasting a variable into the query text, rather than passed as a parameter.
+ *
+ * SQL is text, not code, so this reads the raw line (see the matcher note in the maintainer notes:
+ * code-only matching strips string contents, which is where every query lives). That
+ * makes a narrow test essential, so a line must do all four:
+ *   - call something that executes a query (.query/.execute/raw/$queryRaw);
+ *   - contain a statement keyword AND a WHERE/VALUES/SET clause;
+ *   - interpolate a value into that text;
+ *   - carry no parameter marker, since $1/?/:name means the query is parameterised and the
+ *     interpolated part is almost always a table name rather than the dangerous bit.
+ * Requiring the query call is what keeps prose out ("Run SELECT ... in psql" is a string,
+ * not a call), and tests and one-off loaders are skipped as elsewhere.
+ */
+function firstConcatenatedSql(repo: RepoSnapshot) {
+  // Every ecosystem's way of saying "run this SQL". Case-insensitive and tolerant of a
+  // suffix (executeQuery, QueryRow, ExecuteSqlRaw), because a verb list that only knew the
+  // JavaScript spelling would quietly check one language out of eight.
+  const executesQuery = /\.(query|execute|exec|raw|prepare|fetch_all|fetch_one)\w*\s*\(|\$queryRaw|\b(cursor\.execute|sqlx::query|FromSqlRaw|ExecuteSqlRaw)\b/i;
+  const interpolation = /\$\{[^}]+\}|["'`]\s*\+\s*\w|\+\s*\w+\s*\+|%s\b|\{\w+\}/;
+  const sqlStatement = /\b(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM)\b/i;
+  const whereOrValues = /\b(WHERE|VALUES|SET)\b/i;
+  const placeholder = /\$\d|\?\s*[,)]|:\w+\s*[,)"'`]/;
+  // The values are passed separately even though the marker is not on this line: the query
+  // text is assembled from a pre-built clause and the arguments ride alongside it. Go's
+  // `args...` spread is the common shape (found in ai-cost-guard, where `SELECT COUNT(*)
+  // FROM requests` + where is parameterised - the bare identifier `where` had also been
+  // read as the SQL keyword).
+  const passesArgsSeparately = /\w+\.\.\.|,\s*(args|params|parameters|values|bindings)\b/i;
+  const commentLine = /^\s*(\/\/|#|\*|--)/;
+
+  for (const file of codeFiles(repo)) {
+    if (isOneOffLoader(file.relPath)) continue;
+    const lines = file.content.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (commentLine.test(line)) continue;
+      if (!executesQuery.test(line)) continue;
+      if (!sqlStatement.test(line) || !whereOrValues.test(line)) continue;
+      if (!interpolation.test(line) || placeholder.test(line)) continue;
+      if (passesArgsSeparately.test(line)) continue;
+      return `${file.relPath}:${i + 1}  ${line.trim().slice(0, 100)}`;
+    }
+  }
+  return undefined;
+}
+
 export const DATABASE_RULES: RuleDefinition[] = [
   {
     id: "unbounded-list-query",
@@ -67,6 +114,26 @@ export const DATABASE_RULES: RuleDefinition[] = [
             evidence,
           }
         : undefined;
+    },
+  },
+  {
+    id: "sql-string-concatenation",
+    conceptId: "injection",
+    severity: "high",
+    passSummary: "No SQL built by string concatenation",
+    nextStep:
+      "Pass the value as a parameter instead of pasting it into the query text - the driver then sends code and data separately, so the value can never be read as SQL. Where the variable part is a table or column name, a parameter cannot help: check it against an allow-list of names you wrote.",
+    appliesTo: (repo) => repo.hasDatabase,
+    detect: (repo) => {
+      const evidence = firstConcatenatedSql(repo);
+      if (!evidence) return undefined;
+      return {
+        ruleId: "sql-string-concatenation",
+        conceptId: "injection",
+        severity: "high",
+        summary: "A SQL statement is built by pasting a value into the query text, which is how injection happens.",
+        evidence,
+      };
     },
   },
   {

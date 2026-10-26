@@ -1263,3 +1263,74 @@ describe("found measuring precision on 24 unseen repos", () => {
     expect(runCheck(scanRepo(tmpDir)).skipped).toContain("no-circuit-breaker");
   });
 });
+
+describe("sql-string-concatenation", () => {
+  it("flags a value pasted into the query text", () => {
+    writeCleanApp();
+    write("src/search.js", "const rows = await pool.query(`SELECT * FROM users WHERE email = '${email}'`);");
+
+    expect(findingIds()).toContain("sql-string-concatenation");
+  });
+
+  it("flags older string-building too", () => {
+    writeCleanApp();
+    write("src/search.js", 'const rows = await pool.query("SELECT id FROM users WHERE name = " + name);');
+
+    expect(findingIds()).toContain("sql-string-concatenation");
+  });
+
+  // The cases it must stay quiet on. Each one was a plausible false positive.
+  it.each([
+    ["a parameterised query", 'const rows = await pool.query("SELECT * FROM users WHERE email = $1", [email]);'],
+    ["a parameterised query with ?", 'db.query("SELECT * FROM users WHERE id = ?", [id]);'],
+    ["a named parameter", 'db.query("SELECT * FROM users WHERE id = :id", { id });'],
+    ["an interpolated table name in a parameterised query", "db.query(`SELECT * FROM ${table} WHERE id = $1`, [id]);"],
+    ["SQL in a comment", "// SELECT * FROM users WHERE email = ${email} - the old way"],
+    ["prose in a string", 'const help = "Run SELECT * FROM users WHERE id = ${x} in psql";'],
+    ["a query with no interpolation", 'db.query("SELECT * FROM users WHERE active = true");'],
+  ])("does not flag %s", (_label, line) => {
+    writeCleanApp();
+    write("src/search.js", line);
+
+    expect(findingIds()).not.toContain("sql-string-concatenation");
+  });
+
+  it("does not flag test files, where a concatenated query is harmless", () => {
+    writeCleanApp();
+    write("src/search.test.js", "await pool.query(`DELETE FROM users WHERE email = '${email}'`);");
+
+    expect(findingIds()).not.toContain("sql-string-concatenation");
+  });
+});
+
+describe("sql-string-concatenation across stacks", () => {
+  // A verb list that only knew ".query(" checked one language out of eight: Java's
+  // executeQuery, C#'s .Query and Go's QueryRow all slipped past until this ran.
+  it.each([
+    ["python", "src/dao.py", "cursor.execute(f\"SELECT * FROM users WHERE email = '{email}'\")"],
+    ["java", "src/Dao.java", 'ResultSet rs = stmt.executeQuery("SELECT * FROM users WHERE name = \'" + name + "\'");'],
+    ["csharp", "src/Dao.cs", 'var rows = conn.Query($"SELECT * FROM users WHERE id = {id} AND active = 1");'],
+    ["go", "src/dao.go", 'rows, _ := db.QueryRow("SELECT * FROM users WHERE name = " + name)'],
+  ])("catches it in %s", (_lang, file, line) => {
+    writeCleanApp();
+    write(file, line);
+
+    expect(findingIds()).toContain("sql-string-concatenation");
+  });
+});
+
+describe("sql-string-concatenation: parameterised queries that only look concatenated", () => {
+  it("does not flag a pre-built clause whose values ride alongside it (Go args...)", () => {
+    writeCleanApp();
+    write("src/store.go", "if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM requests`+where, args...).Scan(&total); err != nil {");
+
+    expect(findingIds()).not.toContain("sql-string-concatenation");
+  });
+
+  it("still catches concatenation when no arguments are passed alongside", () => {
+    writeCleanApp();
+    write("src/store.go", 'row := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM requests WHERE user_id = " + userID)');
+
+    expect(findingIds()).toContain("sql-string-concatenation");
+  });
+});
