@@ -45,6 +45,8 @@ no-connection-pool-config
   rust      Build the pool once and share it: PgPoolOptions::new().max_connections(10).connect(url) from sqlx (or deadpool), then clone the handle - never open a connection per request.
 no-healthcheck
   default   Add a GET /health (or /healthz) route that returns 200 once the process can actually serve traffic - checking a real dependency like the DB connection, not just that the process is running.
+no-lockfile
+  default   Commit the lock file and install from it in CI (npm ci rather than npm install). Without it every build resolves to whatever was newest at the time, so a compromised patch release reaches production without anything in your repo changing.
 no-rate-limiting
   default   Add a rate limiter to the framework's middleware chain (e.g. express-rate-limit, @nestjs/throttler, resilience4j) in front of the routes, not inside individual handlers - one place, applies everywhere.
   dotnet    Use the built-in rate limiter (.NET 7+): builder.Services.AddRateLimiter(...) then app.UseRateLimiter() before routing, so it applies to every endpoint.
@@ -65,10 +67,14 @@ no-schema-migrations
   python    Adopt a migration tool and commit the files: Alembic (SQLAlchemy) or Django's built-in migrations. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
   ruby      Use Rails migrations (rails generate migration) and commit them. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
   rust      Adopt a migration tool and commit the files: sqlx migrate (sqlx::migrate! runs them at startup), refinery, or diesel's migrations. Then use expand/contract for anything destructive: add the new column, backfill, write both and read the new one, and drop the old column in a later release.
+password-fast-hash
+  default   Hash passwords with a slow, memory-hard function built for the job - argon2id, scrypt or bcrypt - through your platform's library, which salts each one for you. A general-purpose digest is designed to be fast, which is exactly what an attacker with a GPU wants.
 query-in-loop
   default   If the loop iterates over something that can grow large (rows, users, orders), batch it into one query (a JOIN or an IN (...) lookup) before the loop. If it's a small, bounded set (collection names, config keys, admin metadata), this is likely fine - a static check can't tell rows from a bounded list apart, only you can.
 sql-string-concatenation
   default   Pass the value as a parameter instead of pasting it into the query text - the driver then sends code and data separately, so the value can never be read as SQL. Where the variable part is a table or column name, a parameter cannot help: check it against an allow-list of names you wrote.
+swallowed-error
+  default   Decide what this failure means and act on it: retry what is transient, return an error for what is not, and let anything unexpected reach one handler at the edge. If carrying on really is correct, say so in a comment - the next reader cannot tell a deliberate choice from an oversight.
 too-many-dependencies
   default   Group the constructor's dependencies by which feature they serve. Each group that only ever gets used together is a class trying to split itself out - move it into its own collaborator and inject that instead.
 unbounded-list-query

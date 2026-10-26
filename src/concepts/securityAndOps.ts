@@ -1,3 +1,6 @@
+// buildquick-ignore-file sql-string-concatenation, password-fast-hash
+// The "bad" halves of the injection and password examples are the lesson; they are
+// deliberately wrong so the fix beside them has something to contrast with.
 import type { Concept } from "./types.js";
 
 /** Keeping it safe, and being able to tell what it's doing in production. */

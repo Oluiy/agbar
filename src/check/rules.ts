@@ -1,5 +1,6 @@
 import { DATABASE_RULES } from "./databaseRules.js";
 import { OPERATIONAL_RULES } from "./operationalRules.js";
+import { SECURITY_RULES } from "./securityRules.js";
 import { STRUCTURAL_RULES } from "./structuralRules.js";
 import type { Rule } from "./types.js";
 
@@ -15,5 +16,6 @@ import type { Rule } from "./types.js";
 export const RULES: Rule[] = [
   ...OPERATIONAL_RULES.map((r) => ({ ...r, kind: "operational" as const })),
   ...DATABASE_RULES.map((r) => ({ ...r, kind: "operational" as const })),
+  ...SECURITY_RULES.map((r) => ({ ...r, kind: "operational" as const })),
   ...STRUCTURAL_RULES.map((r) => ({ ...r, kind: "structural" as const })),
 ];

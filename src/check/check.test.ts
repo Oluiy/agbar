@@ -38,6 +38,8 @@ function writeCleanApp(): void {
     })
   );
   write(".gitignore", "node_modules/\n.env\n");
+  // A deployed service commits its lock file, so the exemplar does too.
+  write("package-lock.json", '{"lockfileVersion":3}');
   write("migrations/001_init.sql", "CREATE TABLE items (id SERIAL PRIMARY KEY);");
   write(
     "src/server.js",
@@ -583,7 +585,7 @@ describe("empty directory", () => {
   it("running check on it would report a false 'N/N passed' rather than 'nothing here' without an explicit guard", () => {
     const repo = scanRepo(tmpDir);
     const report = runCheck(repo);
-    expect(new Set(report.passed)).toEqual(new Set(["committed-private-key", "hardcoded-db-credentials"]));
+    expect(new Set(report.passed)).toEqual(new Set(["committed-private-key", "hardcoded-db-credentials", "password-fast-hash", "swallowed-error"]));
     expect(report.passed.length + report.findings.length).toBeGreaterThan(0); // so the dead applicable===0 branch never fires
   });
 });
@@ -1332,5 +1334,124 @@ describe("sql-string-concatenation: parameterised queries that only look concate
     write("src/store.go", 'row := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM requests WHERE user_id = " + userID)');
 
     expect(findingIds()).toContain("sql-string-concatenation");
+  });
+});
+
+describe("password-fast-hash", () => {
+  it("flags a password put through a general-purpose digest", () => {
+    writeCleanApp();
+    write("src/auth.js", 'const stored = createHash("sha256").update(password).digest("hex");');
+
+    expect(findingIds()).toContain("password-fast-hash");
+  });
+
+  it.each([
+    ["argon2", "const stored = await argon2.hash(password);"],
+    ["bcrypt", "const stored = await bcrypt.hash(password, 12);"],
+    ["a file checksum, which is what sha256 is for", 'const etag = createHash("sha256").update(fileBuffer).digest("hex");'],
+    ["a token hash with no password in sight", 'const key = createHash("sha256").update(sessionId).digest("hex");'],
+  ])("does not flag %s", (_label, line) => {
+    writeCleanApp();
+    write("src/auth.js", line);
+
+    expect(findingIds()).not.toContain("password-fast-hash");
+  });
+});
+
+describe("swallowed-error", () => {
+  it("flags a catch that only logs and carries on", () => {
+    writeCleanApp();
+    write("src/save.js", "try {\n  await saveOrder(order);\n} catch (err) {\n  console.log(err);\n}\nreturn ok();");
+
+    expect(findingIds()).toContain("swallowed-error");
+  });
+
+  it("flags an entirely empty catch", () => {
+    writeCleanApp();
+    write("src/save.js", "try {\n  await saveOrder(order);\n} catch (err) {\n}\n");
+
+    expect(findingIds()).toContain("swallowed-error");
+  });
+
+  it.each([
+    ["a catch that rethrows", "try {\n  await save();\n} catch (err) {\n  throw err;\n}"],
+    ["a catch that returns an error response", "try {\n  await save();\n} catch (err) {\n  res.status(500).json({ error: true });\n}"],
+    ["a catch explained in a comment", "try {\n  await warmCache();\n} catch (err) {\n  // the cache is optional; a cold start is fine\n}"],
+  ])("does not flag %s", (_label, body) => {
+    writeCleanApp();
+    write("src/save.js", body);
+
+    expect(findingIds()).not.toContain("swallowed-error");
+  });
+});
+
+describe("no-lockfile", () => {
+  it("flags a service whose lock file is not committed", () => {
+    writeCleanApp();
+    rmSync(path.join(tmpDir, "package-lock.json"));
+
+    expect(findingIds()).toContain("no-lockfile");
+  });
+
+  it("passes once a lock file is committed", () => {
+    writeCleanApp();
+    write("package-lock.json", '{"lockfileVersion":3}');
+
+    expect(findingIds()).not.toContain("no-lockfile");
+  });
+
+  it("does not apply to a library, which omits one on purpose", () => {
+    writeCleanApp();
+    write(".buildquickrc", '{"kind":"library"}');
+
+    expect(findingIds()).not.toContain("no-lockfile");
+  });
+});
+
+describe("swallowed-error: where it must stay quiet, and where it must not", () => {
+  it("ignores a React component, which is not a backend reliability problem", () => {
+    writeCleanApp();
+    write("frontend/package.json", JSON.stringify({ dependencies: { react: "^18" } }));
+    write("frontend/src/Cart.tsx", "try {\n  await addItem(id);\n} catch (err) {\n  console.log(err);\n}");
+
+    expect(findingIds()).not.toContain("swallowed-error");
+  });
+
+  it("ignores a seed script, which a human runs once and watches", () => {
+    writeCleanApp();
+    write("src/prisma/seed.ts", "try {\n  await seedUsers();\n} catch (e) {\n  console.error(e);\n}");
+
+    expect(findingIds()).not.toContain("swallowed-error");
+  });
+
+  it("still flags a swallowed error on a real request path", () => {
+    writeCleanApp();
+    write("src/routes/orders.js", "try {\n  await saveOrder(order);\n} catch (err) {\n  console.log(err);\n}");
+
+    expect(findingIds()).toContain("swallowed-error");
+  });
+});
+
+describe("no-lockfile: every lock file format counts", () => {
+  it.each([["bun.lock"], ["bun.lockb"], ["pnpm-lock.yaml"], ["yarn.lock"], ["npm-shrinkwrap.json"]])("accepts %s", (name) => {
+    writeCleanApp();
+    rmSync(path.join(tmpDir, "package-lock.json"));
+    write(name, "{}");
+
+    expect(findingIds()).not.toContain("no-lockfile");
+  });
+});
+
+describe("password-fast-hash across stacks", () => {
+  it.each([
+    ["javascript", "src/a.js", 'const stored = createHash("sha256").update(password).digest("hex");'],
+    ["python", "src/a.py", "stored = hashlib.sha256(password.encode()).hexdigest()"],
+    ["java", "src/A.java", 'MessageDigest md = MessageDigest.getInstance("MD5"); byte[] h = md.digest(password.getBytes());'],
+    ["csharp", "src/A.cs", "var hash = SHA256.HashData(Encoding.UTF8.GetBytes(password));"],
+  ])("catches it in %s", (_lang, file, line) => {
+    writeCleanApp();
+    write(file, line);
+
+    expect(findingIds()).toContain("password-fast-hash");
   });
 });

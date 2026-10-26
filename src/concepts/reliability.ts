@@ -1,3 +1,5 @@
+// buildquick-ignore-file swallowed-error
+// The error-handling concept shows a swallowed catch on purpose, next to the fix.
 import type { Concept } from "./types.js";
 
 /** Staying up, and degrading sanely when something downstream doesn't. */
