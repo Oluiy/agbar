@@ -60,3 +60,13 @@ describe("suggestConcepts", () => {
     expect(ids[0]).toBe("security-by-design");
   });
 });
+
+describe("an LLM project gets the advice the scaffold cannot give it", () => {
+  it("suggests prompt-injection only when the project calls an LLM API", () => {
+    const llm = buildDecisionContext("springboot", { dbProvider: "postgres" }, true, false, true);
+    const noLlm = buildDecisionContext("springboot", { dbProvider: "postgres" }, true, false, false);
+
+    expect(suggestConcepts(llm).map((s) => s.conceptId)).toContain("prompt-injection");
+    expect(suggestConcepts(noLlm).map((s) => s.conceptId)).not.toContain("prompt-injection");
+  });
+});

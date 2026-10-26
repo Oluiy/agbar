@@ -95,7 +95,7 @@ describe("concept screens", () => {
   it("the list lines the ids up in a column - the thing you type - under each topic heading", () => {
     printConceptsList();
     const t = text();
-    expect(t).toMatch(/Concepts\s+76 across \d+ topics/);
+    expect(t).toMatch(/Concepts\s+78 across \d+ topics/);
     expect(t).toMatch(/Design \(6\)/);
     const lines = t.split("\n").filter((l) => /^ {2}\S.*\s{2}[a-z-]+$/.test(l));
     expect(lines.length).toBeGreaterThan(60);

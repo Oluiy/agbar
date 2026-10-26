@@ -18,6 +18,8 @@ export interface DecisionContext {
   includeDocker: boolean;
   includeTests: boolean;
   isMicroservice: boolean;
+  /** Answered at the prompt: does this project call an LLM API? Drives the AI-specific advice. */
+  usesLlmApi: boolean;
 }
 
 export interface Decision {
@@ -36,7 +38,13 @@ export interface Decision {
 }
 
 /** Reads whatever a stack's own addons bag happens to expose, without assuming every stack provides the same shape. */
-export function buildDecisionContext(stack: string, addons: Record<string, unknown>, includeTests: boolean, isMicroservice: boolean): DecisionContext {
+export function buildDecisionContext(
+  stack: string,
+  addons: Record<string, unknown>,
+  includeTests: boolean,
+  isMicroservice: boolean,
+  usesLlmApi = false
+): DecisionContext {
   const dbProvider = typeof addons.dbProvider === "string" ? addons.dbProvider : "none";
   return {
     stack,
@@ -46,6 +54,7 @@ export function buildDecisionContext(stack: string, addons: Record<string, unkno
     includeDocker: addons.includeDocker === true,
     includeTests,
     isMicroservice,
+    usesLlmApi,
   };
 }
 

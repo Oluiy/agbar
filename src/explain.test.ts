@@ -16,6 +16,7 @@ describe("buildDecisionContext", () => {
       includeDocker: true,
       includeTests: true,
       isMicroservice: false,
+      usesLlmApi: false,
     });
   });
 

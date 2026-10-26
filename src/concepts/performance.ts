@@ -84,6 +84,8 @@ app.get("/users", async (req, res) => res.json((await pool.query("SELECT ...")).
     failureScenario:
       "Traffic spikes and the app opens a new database connection per request. The database has a hard connection limit; once it's hit, every further request fails with 'too many connections' even though the database itself isn't overloaded.",
     fix: "Reuse a fixed pool of already-open connections instead of opening one per request. Size the pool to the database's actual limit, not to however many requests happen to arrive at once.",
+    whenToUse:
+      "Sizing is the whole decision, and more is not better: a pool larger than the database can serve just moves the queue from your app to the database, where it is harder to see. Java 21+ virtual threads make this sharper rather than softer - they make blocking cheap at the thread level, so a service can now have tens of thousands of threads all wanting a connection, but the pool is still the real limit. Keep the pool bounded and let threads wait on it. Watch for pinning too: a virtual thread that blocks inside a synchronized block holds its carrier thread, which is the one way this gets worse rather than better.",
   },
   {
     id: "pagination",

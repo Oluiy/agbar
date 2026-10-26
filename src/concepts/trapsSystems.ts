@@ -135,11 +135,37 @@ UPDATE items SET stock = stock - 1 WHERE id = 7 AND stock > 0;`,
     title: "Blocking on async code (sync-over-async)",
     category: "Runtime & Concurrency",
     failureScenario:
-      "A controller calls GetUserAsync().Result. The request thread blocks waiting for work that itself needs a thread-pool thread to finish. Under load, every thread is blocked waiting, and the whole server stops responding.",
-    fix: "Use async all the way up: await instead of .Result, .Wait() or GetAwaiter().GetResult().",
-    example: `In C#:
-  var user = GetUserAsync(id).Result;   // bad: blocks a thread
-  var user = await GetUserAsync(id);    // good`,
+      "A handler blocks the thread (or the loop) that was supposed to stay free. In .NET, GetUserAsync().Result holds a thread-pool thread until the work it waits on gets a thread of its own - under load every thread is blocked waiting. In Python and Node there is only one event loop, so a single blocking call inside an async handler stops every other request too. The tell is the same everywhere: latency climbs while CPU stays low, because nothing is working - everything is waiting.",
+    fix: "Async all the way up, and never call a blocking library from an async function. Use the async client (httpx over requests, asyncpg over psycopg2, fs/promises over fs.readFileSync), and push work that has no async version off the loop - asyncio.to_thread, or a worker thread. CPU-bound work needs a process, not a thread: Python threads share one interpreter lock.",
+    whenToUse:
+      "The offload rule cuts both ways - moving a fast call to a thread pool costs more than it saves. Offload what blocks for milliseconds or more (file reads, image work, hashing), not every function that lacks an await.",
+    examples: [
+      {
+        language: "Python (FastAPI)",
+        code: `@app.get("/users/{id}")
+async def get_user(id: int):
+    r = requests.get(url)             # bad: stalls the loop for every request
+    r = await client.get(url)         # good: httpx.AsyncClient
+    rows = cursor.execute(q)          # bad: psycopg2 blocks
+    rows = await conn.fetch(q)        # good: asyncpg
+    thumb = await asyncio.to_thread(resize, img)   # no async version? offload it`,
+      },
+      {
+        language: "Node (Express, Fastify, NestJS)",
+        code: `app.get("/report", (req, res) => {
+  const data = readFileSync(path);            // bad: freezes the only loop
+  const data = await readFile(path);          // good: fs/promises
+  const hash = crypto.pbkdf2Sync(pw, salt);   // bad: CPU-bound, blocks everyone
+  crypto.pbkdf2(pw, salt, ..., cb);           // good: async variant
+});`,
+      },
+      {
+        language: "C# (ASP.NET Core)",
+        code: `var user = GetUserAsync(id).Result;   // bad: blocks a thread-pool thread
+var user = await GetUserAsync(id);    // good
+// .Wait() and .GetAwaiter().GetResult() are the same mistake.`,
+      },
+    ],
   },
   {
     id: "mass-assignment",

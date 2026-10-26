@@ -45,6 +45,13 @@ const TRACK_SUGGESTIONS: TrackSuggestion[] = [
 /** Capped when printed - specific beats exhaustive right after a scaffold. */
 const CONCEPT_SUGGESTIONS: ConceptSuggestion[] = [
   {
+    // First, because nothing else in this list covers it and the scaffold gives no
+    // protection against it - the CLI asked the question, so it owes an answer.
+    conceptId: "prompt-injection",
+    reason: "you said this calls an LLM API, and every byte it reads can carry instructions",
+    appliesTo: (ctx) => ctx.usesLlmApi,
+  },
+  {
     conceptId: "security-by-design",
     reason: "you enabled JWT",
     appliesTo: (ctx) => ctx.includeJwt,

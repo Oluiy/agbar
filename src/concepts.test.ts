@@ -5,8 +5,8 @@ import { RULES } from "./check/rules.js";
 import { loadUnits } from "./learn/loader.js";
 
 describe("BACKEND_CONCEPTS", () => {
-  it("has exactly the 76 concepts: 41 backend concepts plus 35 small traps", () => {
-    expect(BACKEND_CONCEPTS).toHaveLength(76);
+  it("has exactly the 78 concepts: 43 backend concepts plus 35 small traps", () => {
+    expect(BACKEND_CONCEPTS).toHaveLength(78);
   });
 
   it("every 'practise it' command points at a lesson unit that really exists", () => {
@@ -19,7 +19,17 @@ describe("BACKEND_CONCEPTS", () => {
   });
 
   it("every concept has a code example - a glossary teaches words, an example teaches the thing", () => {
-    expect(BACKEND_CONCEPTS.filter((c) => !c.example).map((c) => c.id)).toEqual([]);
+    // Either one shared snippet, or one per runtime for concepts that look different in each.
+    expect(BACKEND_CONCEPTS.filter((c) => !c.example && !c.examples?.length).map((c) => c.id)).toEqual([]);
+  });
+
+  it("per-runtime examples are labelled and non-empty, so a reader can find their own stack", () => {
+    for (const c of BACKEND_CONCEPTS.filter((x) => x.examples?.length)) {
+      for (const ex of c.examples!) {
+        expect(ex.language.trim(), `${c.id}: an example has no language label`).not.toBe("");
+        expect(ex.code.trim().length, `${c.id}/${ex.language}: empty example`).toBeGreaterThan(20);
+      }
+    }
   });
 
   it("every JavaScript example at least parses - a typo in teaching code teaches the typo", () => {
@@ -71,6 +81,8 @@ describe("BACKEND_CONCEPTS", () => {
     const ids = [...BACKEND_CONCEPTS.map((c) => c.id)].sort();
     expect(ids).toEqual(
       [
+        "supply-chain-security",
+        "prompt-injection",
         "idempotency-keys",
         "database-indexing",
         "caching",

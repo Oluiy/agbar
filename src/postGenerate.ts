@@ -45,7 +45,7 @@ export function writeTeachingDocs(outDir: string, config: ScaffoldConfig, adapte
 }
 
 export function printLearningSuggestions(config: ScaffoldConfig, adapter: StackAdapter): void {
-  const ctx = buildDecisionContext(adapter.id, config.addons, config.includeTests, config.isMicroservice);
+  const ctx = buildDecisionContext(adapter.id, config.addons, config.includeTests, config.isMicroservice, config.usesLlmApi);
   const track = suggestTrack(ctx);
   const concepts = suggestConcepts(ctx);
   if (!track && concepts.length === 0) return;

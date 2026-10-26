@@ -14,6 +14,7 @@ export function renderLevelingUpDoc(projectName: string): string {
     const parts = [`## ${c.title}`, ``, `_${c.category}_`, ``, `**Where this bites you:** ${c.failureScenario}`, ``, `**The fix:** ${c.fix}`];
     if (c.whenToUse) parts.push(``, `**When to reach for it:** ${c.whenToUse}`);
     if (c.example) parts.push(``, "```", c.example, "```");
+    for (const ex of c.examples ?? []) parts.push(``, `**${ex.language}:**`, "```", ex.code, "```");
     if (c.practice) parts.push(``, `**Practise it:** \`${c.practice}\``);
     if (c.references?.length) {
       parts.push(``, `Read more:`, ...c.references.map((r) => `- [${r.title}](${r.url})`));

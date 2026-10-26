@@ -99,6 +99,11 @@ export function printConceptDetail(query: string): void {
   if (concept.whenToUse) console.log(`${pc.bold(pc.magenta("When to reach for it"))}\n${emphasize(concept.whenToUse)}\n`);
 
   if (concept.example) console.log(`${heading("In code")}\n\n${codeBlock(concept.example)}\n`);
+  // Labelled per runtime: the same mistake wears a different face in each, and a reader
+  // scanning for their own stack should find it without translating someone else's.
+  for (const ex of concept.examples ?? []) {
+    console.log(`${heading(`In code - ${ex.language}`)}\n\n${codeBlock(ex.code)}\n`);
+  }
 
   if (concept.references?.length) {
     console.log(heading("Read more"));
