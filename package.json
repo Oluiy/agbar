@@ -1,7 +1,7 @@
 {
   "name": "agbar",
   "version": "0.1.0",
-  "description": "Scaffold a backend project, grade an existing one, and practise the engineering concepts behind both - with real pass/fail checks, not quizzes.",
+  "description": "Grades an existing codebase, and practise the engineering concepts behind both - with real pass/fail checks, not quizzes, also scaffold a backend project.",
   "type": "module",
   "bin": {
     "agbar": "./dist/cli.js"
