@@ -28,7 +28,7 @@ if (!adapter || !outDirArg || !addonsJson) {
 }
 
 const outDir = path.resolve(outDirArg);
-// resolveAddons validates and fills defaults exactly as `buildquick --yes` would; install
+// resolveAddons validates and fills defaults exactly as `agbar --yes` would; install
 // is forced off because the workflow runs those steps itself.
 const addons = adapter.resolveAddons({ ...JSON.parse(addonsJson), install: false });
 

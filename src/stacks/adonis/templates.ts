@@ -1,5 +1,5 @@
 /**
- * Files buildquick adds on top of AdonisJS's own `api` starter kit. Written in the kit's
+ * Files agbar adds on top of AdonisJS's own `api` starter kit. Written in the kit's
  * style (single quotes, no semicolons) so the project reads as one codebase, and using
  * Adonis's own building blocks - Lucid, VineJS, Japa, @adonisjs/limiter - rather than
  * importing a second way of doing each thing.
@@ -144,7 +144,7 @@ export function routesAppendix(): string {
   return `
 /*
 |--------------------------------------------------------------------------
-| Added by buildquick
+| Added by agbar
 |--------------------------------------------------------------------------
 |
 | Health probes, and the items example feature. Import declarations are
@@ -285,9 +285,9 @@ test.group('Rate limiting', (group) => {
 export function architectureMd(projectName: string): string {
   return `# Architecture
 
-${projectName}, generated with buildquick on top of AdonisJS's own \`api\` starter kit
+${projectName}, generated with agbar on top of AdonisJS's own \`api\` starter kit
 (\`npm create adonisjs -- --kit=api\`). The kit supplies the application shell, auth
-(signup, login, access tokens) and its conventions; buildquick adds the items example
+(signup, login, access tokens) and its conventions; agbar adds the items example
 feature, health probes, rate limiting, and tests. This records the decisions so the next
 person does not have to reverse-engineer them.
 
@@ -298,7 +298,7 @@ app/controllers/   HTTP only - items_controller.ts, health_controller.ts
 app/models/        Lucid models - item.ts
 app/validators/    VineJS schemas - item.ts
 database/migrations/
-start/routes.ts    the kit's routes, then buildquick's (appended, clearly marked)
+start/routes.ts    the kit's routes, then agbar's (appended, clearly marked)
 start/limiter.ts   the rate-limit policy
 tests/functional/  Japa HTTP tests
 \`\`\`
@@ -307,7 +307,7 @@ tests/functional/  Japa HTTP tests
 
 | Decision | Why |
 |---|---|
-| **Built on the official starter kit** | The Adonis team maintains the shell, auth and tooling versions; buildquick only adds what the kit does not. Generating with the framework's own CLI keeps a new project current. |
+| **Built on the official starter kit** | The Adonis team maintains the shell, auth and tooling versions; agbar only adds what the kit does not. Generating with the framework's own CLI keeps a new project current. |
 | **Per-client rate limiting** (\`@adonisjs/limiter\`, database store) | One misbehaving client or a credential-stuffing bot should not take the service down. Added with \`node ace add\`, applied to the whole API group. The database store survives restarts and is shared across instances; tests use the in-memory store. Tune with \`RATE_LIMIT_REQUESTS\`. |
 | **Paginated and capped at 200** | \`paginate()\` always applies LIMIT/OFFSET and returns the total. \`perPage\` is validated with a maximum, so a client cannot ask for the whole table. |
 | **Liveness and readiness are separate** | \`/health\` never touches the database. \`/api/v1/health/ready\` queries it and returns 503 on failure. Neither is throttled. |
@@ -326,7 +326,7 @@ tests/functional/  Japa HTTP tests
 ## What this scaffold deliberately does not include
 
 Caching, tracing and a message queue. Each is a real decision that depends on your
-deployment. Run \`buildquick check\` on this project to see what it still flags, with the
+deployment. Run \`agbar check\` on this project to see what it still flags, with the
 reasoning.
 `;
 }

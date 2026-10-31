@@ -133,7 +133,7 @@ SQLite, so there is nothing to start. Apply migrations with \`alembic upgrade he
 
   return `# ${projectName}
 
-A FastAPI service generated with [buildquick](https://github.com/Oluiy/aggregator)
+A FastAPI service generated with [agbar](https://github.com/Oluiy/aggregator)
 using the **${structure}** structure. See [ARCHITECTURE.md](ARCHITECTURE.md) for why it
 is shaped this way.
 
@@ -178,7 +178,7 @@ fresh clone with nothing installed or running besides the dependencies.
 ## Grade it
 
 \`\`\`bash
-buildquick check        # the same checker that generated this project
+agbar check        # the same checker that generated this project
 \`\`\`
 `;
 }
@@ -240,7 +240,7 @@ ceremony that only pays off when the rules are complex or long-lived.`,
 
   return `# Architecture
 
-${projectName}, generated with buildquick. This file records the decisions so the next
+${projectName}, generated with agbar. This file records the decisions so the next
 person does not have to reverse-engineer them.
 
 ## Structure: ${structure}
@@ -285,7 +285,7 @@ ${db === "none" ? "" : "| **Alembic owns the schema** | `create_all` runs only s
 
 Rate limiting, authentication, caching and tracing. Each is a real decision that
 depends on your deployment, and a wrong default is worse than an obvious gap.
-Run \`buildquick check\` on this project to see them listed as findings, with the
+Run \`agbar check\` on this project to see them listed as findings, with the
 reasoning for each.
 `;
 }

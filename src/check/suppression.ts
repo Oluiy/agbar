@@ -5,8 +5,8 @@ import type { DetectedFinding, RepoSnapshot, Rule } from "./types.js";
  * Inline suppression - so someone who disagrees with one finding can silence
  * that finding instead of uninstalling the tool:
  *
- *   // buildquick-ignore-next-line http-without-timeout
- *   # buildquick-ignore-file no-rate-limiting, no-healthcheck
+ *   // agbar-ignore-next-line http-without-timeout
+ *   # agbar-ignore-file no-rate-limiting, no-healthcheck
  *
  * Matched anywhere on a line, so it works in every comment syntax. A rule id is
  * required - there is no blanket "ignore everything", because the cost of a
@@ -30,16 +30,16 @@ export interface Suppression {
 /**
  * Must be a comment on its own line - `//`, `#`, `--`, `/*` or `<!--` first. Text
  * that merely mentions a directive (a string in a test, a doc comment showing
- * the syntax) doesn't suppress anything: buildquick's own test fixtures were
+ * the syntax) doesn't suppress anything: agbar's own test fixtures were
  * being read as suppressions, with a warning about a rule id inside a string.
  */
-const DIRECTIVE = /^\s*(?:\/\/|#|--|\/\*|<!--|\{\/\*)\s*buildquick-ignore-(next-line|file)\s+([a-z0-9-]+(?:\s*,\s*[a-z0-9-]+)*)/;
+const DIRECTIVE = /^\s*(?:\/\/|#|--|\/\*|<!--|\{\/\*)\s*agbar-ignore-(next-line|file)\s+([a-z0-9-]+(?:\s*,\s*[a-z0-9-]+)*)/;
 
 export function findSuppressions(repo: RepoSnapshot): Suppression[] {
   const found: Suppression[] = [];
   for (const file of repo.files) {
     // Test files are never graded, so a directive there can only be a fixture.
-    if (isTestPath(file.relPath) || !file.content.includes("buildquick-ignore-")) continue;
+    if (isTestPath(file.relPath) || !file.content.includes("agbar-ignore-")) continue;
     file.content.split("\n").forEach((text, i) => {
       const m = DIRECTIVE.exec(text);
       if (m) found.push({ relPath: file.relPath, line: i + 1, scope: m[1] as Suppression["scope"], ruleIds: m[2].split(/\s*,\s*/) });

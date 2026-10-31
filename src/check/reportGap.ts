@@ -33,7 +33,7 @@ const STACK_SPECIFIC_RULE_IDS = [
   "handler-touches-database",
 ];
 
-/** True when there's real code here but nothing stack-specific ever engaged - a gap in what buildquick recognizes, not a passing grade. */
+/** True when there's real code here but nothing stack-specific ever engaged - a gap in what agbar recognizes, not a passing grade. */
 export function isUnrecognizedStack(repo: RepoSnapshot, report: CheckReport): boolean {
   return codeFiles(repo).length > 0 && STACK_SPECIFIC_RULE_IDS.every((id) => report.skipped.includes(id));
 }
@@ -84,7 +84,7 @@ export function buildGapReport(
 }
 
 function renderGapReport(gap: GapReport): string {
-  const lines = [`# buildquick gap report`, ``, `kind: ${gap.kind}`, `timestamp: ${gap.timestamp}`];
+  const lines = [`# agbar gap report`, ``, `kind: ${gap.kind}`, `timestamp: ${gap.timestamp}`];
   if (gap.note) lines.push(``, `note: ${gap.note}`);
   if (gap.finding) {
     lines.push(``, `## Finding`, JSON.stringify(gap.finding, null, 2));
@@ -102,7 +102,7 @@ function renderGapReport(gap: GapReport): string {
  * same DI convention progress.ts already uses.
  */
 export function writeGapReportFile(gap: GapReport, dirOverride?: string): string {
-  const dir = dirOverride ?? path.join(os.homedir(), ".buildquick", "gap-reports");
+  const dir = dirOverride ?? path.join(os.homedir(), ".agbar", "gap-reports");
   const file = path.join(dir, `${gap.timestamp.replace(/[:.]/g, "-")}.md`);
   writeFile(file, renderGapReport(gap));
   return file;
@@ -111,7 +111,7 @@ export function writeGapReportFile(gap: GapReport, dirOverride?: string): string
 const REPORT_TO_EMAIL = "akinboyewaiyanuoluwa15@gmail.com";
 
 export function buildMailto(gap: GapReport): string {
-  const subject = gap.kind === "finding" ? `buildquick: finding may be wrong (${gap.finding?.ruleId})` : `buildquick: unrecognized stack`;
+  const subject = gap.kind === "finding" ? `agbar: finding may be wrong (${gap.finding?.ruleId})` : `agbar: unrecognized stack`;
   const body = renderGapReport(gap);
   return `mailto:${REPORT_TO_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

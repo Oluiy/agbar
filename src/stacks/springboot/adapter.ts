@@ -69,7 +69,7 @@ export const springbootAdapter: StackAdapter = {
       // A lightweight reactor root so "mvn install" from here builds every
       // service in one shot; each service stays fully independent underneath.
       writeFile(path.join(outDir, "pom.xml"), microserviceAggregatorPom(config.projectName.toLowerCase(), config.serviceNames));
-      writeFile(path.join(outDir, "README.md"), `# ${config.projectName}\n\nGenerated with \`buildquick\` (Spring Boot, microservices).\n`);
+      writeFile(path.join(outDir, "README.md"), `# ${config.projectName}\n\nGenerated with \`agbar\` (Spring Boot, microservices).\n`);
       writeFile(path.join(outDir, ".gitignore"), gitignore());
       writeMavenWrapper(outDir);
     } else {

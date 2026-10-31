@@ -5,7 +5,7 @@ prerequisites: ["01-token-bucket"]
 core: true
 estimated_minutes: 20
 explanation: |
-  `buildquick concepts retry-mechanisms` says to retry transient failures with
+  `agbar concepts retry-mechanisms` says to retry transient failures with
   increasing delays. This is the arithmetic behind that, plus the part almost
   everyone leaves out.
 

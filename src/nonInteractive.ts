@@ -118,7 +118,7 @@ export function resolveNonInteractive(
   }
   if (adapter.supportsNonInteractive === false) {
     throw new Error(
-      `'${adapter.label}' can't run non-interactively yet - it hands off to another program's own interactive prompts. Run 'buildquick' without --yes/--config to use it.`
+      `'${adapter.label}' can't run non-interactively yet - it hands off to another program's own interactive prompts. Run 'agbar' without --yes/--config to use it.`
     );
   }
 

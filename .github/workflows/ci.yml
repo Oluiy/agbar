@@ -1,7 +1,7 @@
 name: CI
 
-# buildquick's own typecheck, lint and tests. scaffold-verify.yml proves the projects
-# buildquick *generates* work; this proves buildquick itself does, and it is the gate that
+# agbar's own typecheck, lint and tests. scaffold-verify.yml proves the projects
+# agbar *generates* work; this proves agbar itself does, and it is the gate that
 # would catch a broken `check` rule before it merges.
 on:
   push:
@@ -78,7 +78,7 @@ jobs:
       - run: npm run build
 
       # ...then run the artifact on the oldest Node `engines` promises, with production
-      # dependencies only - exactly what `npm install -g buildquick` gives a user. If this
+      # dependencies only - exactly what `npm install -g agbar` gives a user. If this
       # fails, `engines` is a false promise and must be raised, not worked around.
       - uses: actions/setup-node@v4
         with:

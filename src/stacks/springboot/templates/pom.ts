@@ -40,7 +40,7 @@ export function parentPom(projectNameLower: string, moduleNames: string[]): stri
     <relativePath/>
   </parent>
 
-  <groupId>com.buildquick</groupId>
+  <groupId>com.agbar</groupId>
   <artifactId>${projectNameLower}</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -58,7 +58,7 @@ ${modulesXml}
 
 /**
  * A child module POM. `moduleDependencies` are sibling layer modules (e.g. "application"
- * depending on "domain"), rendered as `com.buildquick:{projectNameLower}-{module}` deps.
+ * depending on "domain"), rendered as `com.agbar:{projectNameLower}-{module}` deps.
  * `includeBootPlugin` adds `spring-boot-maven-plugin`, used only by the api module so it
  * (and only it) packages into a runnable jar.
  */
@@ -72,7 +72,7 @@ export function modulePom(
   const moduleDepsXml = moduleDependencies
     .map(
       (dep) => `    <dependency>
-      <groupId>com.buildquick</groupId>
+      <groupId>com.agbar</groupId>
       <artifactId>${projectNameLower}-${dep}</artifactId>
       <version>\${project.version}</version>
     </dependency>`
@@ -112,7 +112,7 @@ export function modulePom(
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.buildquick</groupId>
+    <groupId>com.agbar</groupId>
     <artifactId>${projectNameLower}</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
@@ -157,7 +157,7 @@ export function singleModulePom(projectNameLower: string, dependencies: ModuleDe
     <relativePath/>
   </parent>
 
-  <groupId>com.buildquick</groupId>
+  <groupId>com.agbar</groupId>
   <artifactId>${projectNameLower}</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
@@ -192,7 +192,7 @@ export function microserviceAggregatorPom(projectNameLower: string, serviceNames
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.buildquick</groupId>
+  <groupId>com.agbar</groupId>
   <artifactId>${projectNameLower}</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>

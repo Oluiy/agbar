@@ -13,7 +13,7 @@ import { FASTAPI_STRUCTURES } from "./types.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-fastapi-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-fastapi-test-"));
 });
 
 afterEach(() => {

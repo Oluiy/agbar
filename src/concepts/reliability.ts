@@ -1,4 +1,4 @@
-// buildquick-ignore-file swallowed-error
+// agbar-ignore-file swallowed-error
 // The error-handling concept shows a swallowed catch on purpose, next to the fix.
 import type { Concept } from "./types.js";
 
@@ -37,7 +37,7 @@ for (let attempt = 0; attempt < 5; attempt++) {
   catch { await sleep(Math.random() * 100 * 2 ** attempt); }
 }
 throw new Error("gave up after 5 attempts");`,
-    practice: "buildquick learn algorithms 02-exponential-backoff",
+    practice: "agbar learn algorithms 02-exponential-backoff",
   },
   {
     id: "timeouts",

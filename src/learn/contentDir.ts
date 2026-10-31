@@ -5,18 +5,18 @@ import { fileURLToPath } from "node:url";
 /**
  * Where lesson/track content is read from, in priority order:
  *
- *   1. BUILDQUICK_CONTENT env var
- *   2. "contentDir" in a .buildquickrc JSON file in the current directory
+ *   1. AGBAR_CONTENT env var
+ *   2. "contentDir" in a .agbarrc JSON file in the current directory
  *   3. the content/ directory bundled with this package
  *
  * A custom directory doesn't have to be complete - resolution falls through to
  * the bundled content for anything it doesn't provide. That's what lets a team
  * ship only their own standards (one track, a few units) without having to
- * re-vendor everything buildquick already ships.
+ * re-vendor everything agbar already ships.
  */
 
 function rcContentDir(): string | undefined {
-  const rcPath = path.join(process.cwd(), ".buildquickrc");
+  const rcPath = path.join(process.cwd(), ".agbarrc");
   if (!existsSync(rcPath)) return undefined;
   try {
     const parsed = JSON.parse(readFileSync(rcPath, "utf-8")) as { contentDir?: unknown };
@@ -29,7 +29,7 @@ function rcContentDir(): string | undefined {
 /** Custom content roots, highest priority first. Empty when neither is configured. */
 export function customContentRoots(): string[] {
   const roots: string[] = [];
-  const fromEnv = process.env.BUILDQUICK_CONTENT;
+  const fromEnv = process.env.AGBAR_CONTENT;
   if (fromEnv) roots.push(path.resolve(fromEnv));
   const fromRc = rcContentDir();
   if (fromRc) roots.push(path.resolve(process.cwd(), fromRc));

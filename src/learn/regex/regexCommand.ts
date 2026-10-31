@@ -4,7 +4,7 @@ import { findPitfalls, type Pitfall } from "./pitfalls.js";
 import { parsePattern, RegexTimeout, REGEX_TIMEOUT_MS, safeMatchAll } from "./safeRegex.js";
 
 /**
- * `buildquick regex "<pattern>" [text...]` - see exactly what a pattern matches.
+ * `agbar regex "<pattern>" [text...]` - see exactly what a pattern matches.
  * Matches are highlighted inside each text (the part people misjudge is WHERE
  * it matched, not whether), groups are listed, and the classic pitfalls are
  * called out before they become bugs. Runs with a timeout, so a catastrophic
@@ -60,12 +60,12 @@ export function printRegexReport(pattern: string, texts: string[], flags = ""): 
       console.log(`  ${pc.bold(pc.red("✖"))} ${JSON.stringify(text)}  ${pc.bold(pc.red(`gave up after ${REGEX_TIMEOUT_MS}ms - catastrophic backtracking`))}`);
     }
   }
-  if (texts.length === 0) console.log(pc.dim("  Pass some text after the pattern to see what it matches, e.g. buildquick regex '^\\d{5}$' 12345 123456"));
+  if (texts.length === 0) console.log(pc.dim("  Pass some text after the pattern to see what it matches, e.g. agbar regex '^\\d{5}$' 12345 123456"));
 
   const pitfalls = findPitfalls(re.source, re.flags);
   if (pitfalls.length > 0) {
     console.log(`\n${pc.bold("Worth checking:")}`);
     for (const p of pitfalls) console.log(`  ${MARK[p.severity](p.message)}`);
   }
-  console.log(pc.dim("\nLearn the why: buildquick learn regex"));
+  console.log(pc.dim("\nLearn the why: agbar learn regex"));
 }

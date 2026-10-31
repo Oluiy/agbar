@@ -10,18 +10,18 @@ First public release.
 
 ### Added
 
-- **`buildquick check`**: grades a repo against 19 rules for production problems - leaked
+- **`agbar check`**: grades a repo against 19 rules for production problems - leaked
   secrets, missing timeouts, N+1 queries, unbounded list queries, no rate limiting, no
   health check, no migrations, oversized files, and more. Each finding has a severity, a
   file and line, a next step, and a link to a concept.
 - **Stack-aware advice**: next steps are written for the language of the flagged file
   (.NET, Go, Rust, TypeScript, JavaScript, Java, Python).
-- **`buildquick concepts`**: 76 concepts - the failure scenario, the fix, a code example -
+- **`agbar concepts`**: 76 concepts - the failure scenario, the fix, a code example -
   searchable by id or keyword.
-- **`buildquick learn`, `tracks`, `submit`**: graded lessons where you write real code or
+- **`agbar learn`, `tracks`, `submit`**: graded lessons where you write real code or
   YAML and get specific feedback, plus 12 ordered learning tracks and a spaced-repetition
   review (`learn --review`).
-- **`buildquick regex` and `buildquick cron`**: see what a regex matches and where it
+- **`agbar regex` and `agbar cron`**: see what a regex matches and where it
   breaks, and exactly when a cron schedule will run.
 - **Scaffolding** of FastAPI, Django, Axum (Rust), Spring Boot, NestJS, Express, Fastify, AdonisJS and ASP.NET Core
   projects, each with an `ARCHITECTURE.md`. FastAPI, Django and Axum offer two or three
@@ -36,7 +36,7 @@ First public release.
   built and run end to end (they use `node:24-trixie-slim`: prebuilt native modules refuse
   to load on bookworm's older glibc). The Spring Boot, Django, FastAPI and Axum Dockerfiles
   have not been built.
-- **`.buildquickrc`**: `{"kind": "cli"}` skips advice meant for production services, and
+- **`.agbarrc`**: `{"kind": "cli"}` skips advice meant for production services, and
   inline suppressions silence a rule on a line.
 - **One colour palette** across all commands, with colour never the only signal.
 - **Scaffolding is fast by default.** Generating is about half a second; installing
@@ -65,10 +65,10 @@ First public release.
 
 - `check` skipped every database rule on Django, Peewee, Tortoise and SQLModel projects:
   their database is implicit (SQLite needs no driver), so no database dependency was
-  ever listed. Found by grading buildquick's own generated Django project.
+  ever listed. Found by grading agbar's own generated Django project.
 - `check` never ran its HTTP rules (rate limiting, health check) on AdonisJS apps, and
   did not count `drizzle-kit` or `umzug` as migration tools. Both found by grading
-  buildquick's own generated projects.
+  agbar's own generated projects.
 - Non-interactive `--config` now rejects unknown keys by name and supports
   `outputDirectory`; both used to be ignored silently.
 

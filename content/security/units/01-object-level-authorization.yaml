@@ -96,4 +96,4 @@ review_questions:
       - "tests only ask for their own rows"
     explain: "With one logged-in user asking for their own rows, the check being absent makes no difference. It takes a second account to see it."
 project_tiein:
-  note: "Every endpoint in the project you scaffolded that takes an :id from the URL has this question to answer. Run buildquick concepts object-level-authorization for the version with a database behind it."
+  note: "Every endpoint in the project you scaffolded that takes an :id from the URL has this question to answer. Run agbar concepts object-level-authorization for the version with a database behind it."

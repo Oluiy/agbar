@@ -34,7 +34,7 @@ export function initializrDependencies(addons: SpringBootAddons): string[] {
 
   if (addons.dbProvider !== "none") {
     deps.push("data-jpa");
-    // Flyway because a database with no migration tool is a finding `buildquick
+    // Flyway because a database with no migration tool is a finding `agbar
     // check` would report on this project's own output.
     deps.push("flyway");
     deps.push(addons.dbProvider === "mysql" ? "mysql" : "postgresql");
@@ -61,10 +61,10 @@ export async function bootstrapWithInitializr(projectDir: string, projectName: s
     ["type", "maven-project"],
     ["language", "java"],
     ["javaVersion", javaVersion],
-    ["groupId", "com.buildquick"],
+    ["groupId", "com.agbar"],
     ["artifactId", artifactId],
     ["name", projectName],
-    ["packageName", `com.buildquick.${artifactId}`],
+    ["packageName", `com.agbar.${artifactId}`],
     ["dependencies", initializrDependencies(addons).join(",")],
   ];
 
@@ -101,7 +101,7 @@ async function extractZip(zipPath: string, intoDir: string): Promise<boolean> {
  */
 export function removeInitializrDefaults(projectDir: string, projectName: string): void {
   const artifactId = projectName.toLowerCase();
-  const pkgPath = path.join("com", "buildquick", artifactId);
+  const pkgPath = path.join("com", "agbar", artifactId);
   const className = `${projectName.charAt(0).toUpperCase()}${projectName.slice(1)}Application`;
 
   for (const relPath of [path.join("src", "main", "java", pkgPath, `${className}.java`), path.join("src", "test", "java", pkgPath, `${className}Tests.java`)]) {

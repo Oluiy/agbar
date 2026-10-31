@@ -18,7 +18,7 @@ export async function generateMultiModuleSet(
   addons: SpringBootAddons
 ): Promise<void> {
   const projectNameLower = projectName.toLowerCase();
-  const basePackage = `com.buildquick.${projectNameLower}`;
+  const basePackage = `com.agbar.${projectNameLower}`;
   const { dbProvider, includeJwt, includeDocker } = addons;
   const hasDb = dbProvider !== "none";
 
@@ -30,7 +30,7 @@ export async function generateMultiModuleSet(
   const moduleNames = isFourLayer ? ["domain", "application", "infrastructure", "api"] : ["domain", "application", "api"];
   writeFile(path.join(outDir, "pom.xml"), parentPom(projectNameLower, moduleNames));
   writeFile(path.join(outDir, ".gitignore"), gitignore());
-  writeFile(path.join(outDir, "README.md"), `# ${projectName}\n\nGenerated with \`buildquick\` (Spring Boot, Multi-Module).\n`);
+  writeFile(path.join(outDir, "README.md"), `# ${projectName}\n\nGenerated with \`agbar\` (Spring Boot, Multi-Module).\n`);
 
   if (includeDocker) {
     writeFile(path.join(outDir, "Dockerfile"), dockerfile(`${projectNameLower}-api`));

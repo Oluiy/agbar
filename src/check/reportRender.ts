@@ -5,7 +5,7 @@ import { RULES } from "./rules.js";
 import type { CheckReport, Finding, RuleKind, Severity } from "./types.js";
 
 /**
- * Pure string-building for `buildquick check`'s output - kept out of
+ * Pure string-building for `agbar check`'s output - kept out of
  * checkCommand.ts so that file stays scan-run-print, and this stays testable
  * without capturing console.log.
  */
@@ -67,7 +67,7 @@ function renderFinding(f: Finding, index: number, explain: boolean): string {
     const fix = conceptFix(f.conceptId);
     if (fix) lines.push(`${indent}${pc.green("Why it works:")} ${fix}`);
   }
-  lines.push(`${indent}${pc.dim("Learn why:")} ${command(`buildquick concepts ${f.conceptId}`)}`);
+  lines.push(`${indent}${pc.dim("Learn why:")} ${command(`agbar concepts ${f.conceptId}`)}`);
   return lines.join("\n");
 }
 
@@ -90,10 +90,10 @@ const SERVICE_ONLY = new Set(RULES.filter((r) => r.serviceOnly).map((r) => r.id)
 function kindNote(report: CheckReport): string {
   if (report.kind && report.kind !== "service") {
     const n = report.skippedForKind?.length ?? 0;
-    return n > 0 ? `${pc.magenta(`${n} production-service check(s) skipped: .buildquickrc says this is a ${report.kind}.`)}\n` : "";
+    return n > 0 ? `${pc.magenta(`${n} production-service check(s) skipped: .agbarrc says this is a ${report.kind}.`)}\n` : "";
   }
   if (!report.kind && report.findings.some((f) => SERVICE_ONLY.has(f.ruleId))) {
-    return `${pc.magenta('Not a deployed service (a CLI, library, or local tool)? Add {"kind": "cli"} to .buildquickrc to skip service-only checks.')}\n`;
+    return `${pc.magenta('Not a deployed service (a CLI, library, or local tool)? Add {"kind": "cli"} to .agbarrc to skip service-only checks.')}\n`;
   }
   return "";
 }
@@ -108,7 +108,7 @@ function suppressionNote(report: CheckReport): string {
   const lines: string[] = [];
   const hidden = report.suppressed ?? [];
   if (hidden.length > 0) {
-    lines.push(pc.yellow(`${hidden.length} finding(s) hidden by buildquick-ignore comments:`));
+    lines.push(pc.yellow(`${hidden.length} finding(s) hidden by agbar-ignore comments:`));
     for (const s of hidden) lines.push(pc.yellow(`  ${s.ruleId}${s.evidence ? `  ${s.evidence.split(/\s{2}/)[0]}` : ""}`));
   }
   for (const u of report.unknownSuppressions ?? []) {
@@ -154,7 +154,7 @@ export function renderCheckReport(report: CheckReport, root: string, explain: bo
   const ordered = orderedFindings(report.findings);
   const rank: Record<Severity, number> = { high: 0, medium: 1, low: 2 };
   const first = ordered.reduce((best, f) => (rank[f.severity] < rank[best.severity] ? f : best), ordered[0]);
-  const startHere = `${pc.bold(`Start with #${ordered.indexOf(first) + 1}`)} - it's the most serious. ${command(`buildquick concepts ${first.conceptId}`)} explains why it matters.\n\n`;
+  const startHere = `${pc.bold(`Start with #${ordered.indexOf(first) + 1}`)} - it's the most serious. ${command(`agbar concepts ${first.conceptId}`)} explains why it matters.\n\n`;
   return `${header}${counts}\n\n${body}\n\n${startHere}${suppressionNote(report)}${kindNote(report)}${footer}`;
 }
 

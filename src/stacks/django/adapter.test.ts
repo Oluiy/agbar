@@ -12,7 +12,7 @@ import { DJANGO_STRUCTURES } from "./types.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-django-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-django-test-"));
 });
 
 afterEach(() => {

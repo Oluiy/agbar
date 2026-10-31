@@ -145,7 +145,7 @@ volumes:
 export function readmeMd(projectName: string, structure: DjangoStructure, db: DjangoDb): string {
   return `# ${projectName}
 
-A Django REST service generated with [buildquick](https://github.com/Oluiy/aggregator),
+A Django REST service generated with [agbar](https://github.com/Oluiy/aggregator),
 using the **${structure}** structure. See [ARCHITECTURE.md](ARCHITECTURE.md) for why it
 is shaped this way.
 
@@ -183,7 +183,7 @@ python manage.py createsuperuser               # then visit /admin/
 ## Grade it
 
 \`\`\`bash
-buildquick check
+agbar check
 \`\`\`
 `;
 }
@@ -226,7 +226,7 @@ create and retrieve, so there is no code to write for them. Start here; move to 
 
   return `# Architecture
 
-${projectName}, generated with buildquick. This records the decisions so the next person
+${projectName}, generated with agbar. This records the decisions so the next person
 does not have to reverse-engineer them.
 
 ## Structure: ${structure}
@@ -258,6 +258,6 @@ ${layout}
 
 Authentication, caching, tracing, and a task queue. Each is a real decision that depends
 on your deployment, and a wrong default is worse than an obvious gap. Run
-\`buildquick check\` to see what it still flags, with the reasoning.
+\`agbar check\` to see what it still flags, with the reasoning.
 `;
 }

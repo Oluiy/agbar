@@ -28,7 +28,7 @@ explanation: |
   The fix is almost always to remove the nesting: `^a+$` means the same thing
   and runs in linear time. Be suspicious of `(x+)+`, `(x*)*`, `(.*)*`, and of
   alternatives that can match the same text, like `(a|a)+`.
-  Check a pattern live: `buildquick regex '^(a+)+$' aaaaaaaaaaaaaaaaaaaaaaaaaaaa!`
+  Check a pattern live: `agbar regex '^(a+)+$' aaaaaaaaaaaaaaaaaaaaaaaaaaaa!`
 example_code: |
   // Bad: g on a validator - lastIndex carries over between calls
   const isId = /^\d+$/g;

@@ -9,7 +9,7 @@ import { dominantLanguage, STACK_ADVICE } from "./stackAdvice.js";
 
 let dir: string;
 beforeEach(() => {
-  dir = mkdtempSync(path.join(tmpdir(), "buildquick-advice-"));
+  dir = mkdtempSync(path.join(tmpdir(), "agbar-advice-"));
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 

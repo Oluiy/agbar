@@ -10,7 +10,7 @@ import type { Reporter } from "./ui/progress.js";
 
 let root: string;
 beforeEach(() => {
-  root = mkdtempSync(path.join(tmpdir(), "buildquick-engine-"));
+  root = mkdtempSync(path.join(tmpdir(), "agbar-engine-"));
 });
 afterEach(() => {
   rmSync(root, { recursive: true, force: true });

@@ -106,4 +106,4 @@ review_questions:
       - "a list of column names you wrote"
     explain: "Parameters carry values. A column name is part of the statement's structure, so the only safe check is an exact match against names you chose."
 project_tiein:
-  note: "buildquick check flags this as sql-string-concatenation. Run it on the project you scaffolded to see whether any query builds its text from a value."
+  note: "agbar check flags this as sql-string-concatenation. Run it on the project you scaffolded to see whether any query builds its text from a value."

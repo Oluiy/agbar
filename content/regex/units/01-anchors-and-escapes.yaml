@@ -30,7 +30,7 @@ explanation: |
   How to test a regex properly: check it against things it must **reject**,
   not just things it should accept. A pattern that matches every good input is
   easy; one that also refuses every bad input is the actual job.
-  Try any pattern live: `buildquick regex '^\d{5}$' 12345 123456`
+  Try any pattern live: `agbar regex '^\d{5}$' 12345 123456`
 example_code: |
   // Bad: matches anywhere - "123456" and "ZIP 12345" both pass
   /\d{5}/.test("123456");        // true

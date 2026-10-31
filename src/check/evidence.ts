@@ -97,7 +97,7 @@ const HTTP_FRAMEWORKS = [
   "@hapi/hapi",
   "restify", // Node / Bun
   // AdonisJS: missing it meant an Adonis API was never checked for a rate limiter or a
-  // health endpoint - found by grading buildquick's own generated Adonis project.
+  // health endpoint - found by grading agbar's own generated Adonis project.
   "@adonisjs/core",
   "sanic",
   "starlette",

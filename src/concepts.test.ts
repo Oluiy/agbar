@@ -15,8 +15,8 @@ describe("BACKEND_CONCEPTS", () => {
 
   it("every 'practise it' command points at a lesson unit that really exists", () => {
     for (const c of BACKEND_CONCEPTS.filter((x) => x.practice)) {
-      const m = /^buildquick learn (\S+) (\S+)$/.exec(c.practice!);
-      expect(m, `${c.id}: practice must be 'buildquick learn <language> <unit-id>'`).not.toBeNull();
+      const m = /^agbar learn (\S+) (\S+)$/.exec(c.practice!);
+      expect(m, `${c.id}: practice must be 'agbar learn <language> <unit-id>'`).not.toBeNull();
       const ids = loadUnits(m![1]).map((u) => u.id);
       expect(ids, `${c.id}: no unit '${m![2]}' in ${m![1]}`).toContain(m![2]);
     }

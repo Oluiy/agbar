@@ -22,7 +22,7 @@ const CARGO_AVAILABLE = hasCargo();
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-rustchecker-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-rustchecker-test-"));
   mkdirSync(path.join(tmpDir, "src"), { recursive: true });
   writeFileSync(path.join(tmpDir, "Cargo.toml"), `[package]\nname = "checker_test"\nversion = "0.1.0"\nedition = "2021"\n`, "utf-8");
 });

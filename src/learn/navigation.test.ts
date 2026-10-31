@@ -32,7 +32,7 @@ describe("resolveLesson - no need to type the full id", () => {
   });
 });
 
-describe("pickChallenge - what plain `buildquick submit` grades", () => {
+describe("pickChallenge - what plain `agbar submit` grades", () => {
   it("the one named, else the first one not yet passed", () => {
     const u = units[0];
     expect(pickChallenge(u, {}, "fix-same-username")?.id).toBe("fix-same-username");

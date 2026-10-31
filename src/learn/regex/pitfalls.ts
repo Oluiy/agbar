@@ -1,6 +1,6 @@
 /**
  * The regex mistakes people make most - each small, each easy to overlook, each
- * a real bug. Spotted from the pattern's source alone, so `buildquick regex` can
+ * a real bug. Spotted from the pattern's source alone, so `agbar regex` can
  * warn before anything is run. Heuristics, worded as "check this", not verdicts.
  */
 

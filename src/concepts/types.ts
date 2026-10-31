@@ -35,7 +35,7 @@ export interface Concept {
    * Per-runtime versions, for concepts whose failure LOOKS different in each one.
    * Blocking a .NET thread pool, stalling a Python event loop and freezing Node's
    * single loop are the same mistake, but a C# snippet teaches a FastAPI user
-   * nothing - and buildquick scaffolds nine stacks across five languages.
+   * nothing - and agbar scaffolds nine stacks across five languages.
    *
    * Use `example` when the code is the same everywhere; use this when it is not.
    * Rendered in order, so put the most common runtime first.

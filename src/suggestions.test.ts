@@ -11,7 +11,7 @@ const loaded = buildDecisionContext("springboot", { dbProvider: "postgres", incl
 describe("suggestion ids resolve against real content", () => {
   // The reason suggestions.ts carries ids as data instead of loading tracks at
   // generation time: this catches a typo at test time, without coupling a
-  // successful scaffold to content loading that a custom BUILDQUICK_CONTENT
+  // successful scaffold to content loading that a custom AGBAR_CONTENT
   // directory might not satisfy.
   it("every suggested track exists in tracks.yaml", () => {
     const trackIds = new Set(loadTracks().map((t) => t.id));

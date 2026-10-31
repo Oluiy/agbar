@@ -1,6 +1,6 @@
 # Ordered paths through content that already exists. Adding a track is data,
-# never code. Teams can ship their own by pointing BUILDQUICK_CONTENT (or
-# .buildquickrc's "contentDir") at a directory with its own tracks.yaml.
+# never code. Teams can ship their own by pointing AGBAR_CONTENT (or
+# .agbarrc's "contentDir") at a directory with its own tracks.yaml.
 tracks:
   - id: "first-steps"
     title: "First steps: from config files to code you can change"

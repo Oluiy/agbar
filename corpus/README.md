@@ -1,7 +1,7 @@
 # Precision corpus
 
 A pile of real repos kept to test the checker itself. Nothing here affects what
-`buildquick check` does - delete this folder and every command behaves identically.
+`agbar check` does - delete this folder and every command behaves identically.
 Its only job is to tell the maintainer when a rule change made the tool noisier.
 
 The rules are hand-written heuristics, and a heuristic is a guess about what bad code

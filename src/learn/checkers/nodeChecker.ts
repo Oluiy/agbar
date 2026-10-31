@@ -11,7 +11,7 @@ const TIMEOUT_MS = 20_000;
  *
  * Chosen over vitest/jest deliberately: the scratch workspace needs **zero
  * dependencies** and zero `npm install`, so a challenge runs instantly, offline,
- * on any machine that can already run buildquick. Adding a test framework would
+ * on any machine that can already run agbar. Adding a test framework would
  * mean a package install per challenge, which is a worse experience for what is
  * meant to be a two-minute exercise.
  */

@@ -263,7 +263,7 @@ export function readmeMd(projectName: string, framework: NodeFramework, structur
   const plugin = ormPlugin(orm);
   return `# ${projectName}
 
-A ${label} service in TypeScript, generated with [buildquick](https://github.com/Oluiy/aggregator),
+A ${label} service in TypeScript, generated with [agbar](https://github.com/Oluiy/aggregator),
 using the **${structure}** structure${plugin ? ` and **${plugin.label}** on **${db === "sqlite" ? "SQLite" : "PostgreSQL"}**` : ""}. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for why it is shaped this way.
 
@@ -314,7 +314,7 @@ npm run typecheck
 ## Grade it
 
 \`\`\`bash
-buildquick check
+agbar check
 \`\`\`
 `;
 }
@@ -358,7 +358,7 @@ structure when the domain needs to stop knowing about ${ormName} and zod.`;
 
   return `# Architecture
 
-${projectName}, generated with buildquick. This records the decisions so the next person
+${projectName}, generated with agbar. This records the decisions so the next person
 does not have to reverse-engineer them.
 
 ## Structure: ${structure}
@@ -403,6 +403,6 @@ ${plugin ? `| Change the schema | ${plugin.docs.schemaChange} |\n` : ""}| Call a
 
 Authentication, caching, tracing export and a message queue. Each is a real decision that
 depends on your deployment, and a wrong default is worse than an obvious gap. Run
-\`buildquick check\` on this project to see what it still flags, with the reasoning.
+\`agbar check\` on this project to see what it still flags, with the reasoning.
 `;
 }

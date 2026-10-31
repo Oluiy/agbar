@@ -12,7 +12,7 @@ import { NEST_VERSIONS } from "./versions.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-nestjs-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-nestjs-test-"));
 });
 
 afterEach(() => {

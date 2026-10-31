@@ -1,4 +1,4 @@
-// buildquick-ignore-file unbounded-list-query
+// agbar-ignore-file unbounded-list-query
 // This file's examples show unbounded queries ON PURPOSE, as the "bad" half of a
 // bad/good pair - text that teaches, not a query that runs.
 import type { Concept } from "./types.js";
@@ -31,7 +31,7 @@ async function getUser(id) {
   await cache.set(\`user:\${id}\`, JSON.stringify(user), { EX: 300 });  // expire in 5 min
   return user;
 }`,
-    practice: "buildquick learn algorithms 03-lru-cache",
+    practice: "agbar learn algorithms 03-lru-cache",
     title: "Caching",
     category: "Performance",
     failureScenario:

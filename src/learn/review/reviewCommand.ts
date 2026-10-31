@@ -6,7 +6,7 @@ import { defaultProgressPath, loadProgress } from "../progress.js";
 import { defaultReviewStatePath, loadReviewState, saveReviewState } from "./reviewState.js";
 import { dueQuestions, reviewOutlook, runSession, type AnswerResult, type DueQuestion } from "./session.js";
 
-/** CLI glue for `buildquick learn [language] --review`: gather what's due, ask, show feedback, save. */
+/** CLI glue for `agbar learn [language] --review`: gather what's due, ask, show feedback, save. */
 
 async function askInTerminal(item: DueQuestion): Promise<string | undefined> {
   const answer = await clack.text({ message: `${pc.dim(`[${item.unit.title}]`)}\n${item.question.question}` });
@@ -31,7 +31,7 @@ export function nothingDueMessage(passedUnits: number, nextDueAt: number | undef
   if (passedUnits === 0) {
     return (
       `\n${pc.bold("Nothing to review yet")} - questions come from lessons you've passed, and you haven't passed one.\n` +
-      `Start with ${command("buildquick tracks first-steps")}, or open a lesson: ${command("buildquick learn yaml 1")}.\n` +
+      `Start with ${command("agbar tracks first-steps")}, or open a lesson: ${command("agbar learn yaml 1")}.\n` +
       pc.dim("A day after you pass a lesson, its questions show up here, then at growing intervals (3, 7, 16, 35, 90 days).")
     );
   }

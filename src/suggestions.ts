@@ -8,7 +8,7 @@ import type { DecisionContext } from "./explain.js";
  * one place that reads a stack's addons bag.
  *
  * Deliberately does NOT load content/tracks.yaml at generation time: a user with
- * BUILDQUICK_CONTENT pointed at a directory without tracks.yaml would otherwise
+ * AGBAR_CONTENT pointed at a directory without tracks.yaml would otherwise
  * crash a successful scaffold on its last line. Track ids and titles are carried
  * here as data, and a test validates they resolve against the real content.
  */

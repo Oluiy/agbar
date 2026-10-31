@@ -1,5 +1,5 @@
 /**
- * Language-agnostic core of `buildquick learn` - same DIP shape as
+ * Language-agnostic core of `agbar learn` - same DIP shape as
  * src/stacks/StackAdapter.ts (a generic engine, per-language plugins), applied
  * to checking a learner's submission instead of generating a project. Nothing
  * in this file may import anything Rust-specific; that only happens inside a

@@ -22,7 +22,7 @@ export function printTracksList(): void {
     const progressText = lessons > 0 ? ` ${dim("·")} ${progressOf(done, lessons)} ${dim("lessons done")}` : "";
     console.log(`  ${name(track.title)}${start}`);
     console.log(`    ${dim(`${track.audience} · ${track.steps.length} steps`)}${progressText}`);
-    console.log(`    ${command(`buildquick tracks ${track.id}`)}\n`);
+    console.log(`    ${command(`agbar tracks ${track.id}`)}\n`);
   }
 }
 
@@ -36,7 +36,7 @@ function bar(done: number, total: number, width = 10): string {
 function lessonStep(language: string, unitId: string): { title: string; cmd: string } {
   const units = loadUnits(language);
   const at = units.findIndex((u) => u.id === unitId);
-  return { title: units[at]?.title ?? unitId, cmd: `buildquick learn ${language} ${at + 1}` };
+  return { title: units[at]?.title ?? unitId, cmd: `agbar learn ${language} ${at + 1}` };
 }
 
 /** Steps hang their command under the title, lined up past the number and status columns. */
@@ -52,7 +52,7 @@ function printStep(track: Track, index: number, isNext: boolean): void {
     const concept = BACKEND_CONCEPTS.find((c) => c.id === step.conceptId);
     // loadTracks() already validated this resolves, so concept is always found here.
     console.log(`  ${num} ${dim("· read       ")} ${name(concept!.title)}${here}`);
-    console.log(`${INDENT}${command(`buildquick concepts ${step.conceptId}`)}`);
+    console.log(`${INDENT}${command(`agbar concepts ${step.conceptId}`)}`);
     return;
   }
 
@@ -75,7 +75,7 @@ export function printTrackDetail(trackId: string): void {
   const tracks = loadTracks();
   const track = findTrack(tracks, trackId);
   if (!track) {
-    console.error(pc.red(`No track '${trackId}'.`) + ` Run ${command("buildquick tracks")} to see them all.`);
+    console.error(pc.red(`No track '${trackId}'.`) + ` Run ${command("agbar tracks")} to see them all.`);
     process.exitCode = 1;
     return;
   }
@@ -95,7 +95,7 @@ export function printTrackDetail(trackId: string): void {
 
   console.log("");
   if (next === -1 && lessons > 0) {
-    console.log(`${good("Every lesson on this track is done.")} ${nextStep("pick another:", "buildquick tracks")}`);
+    console.log(`${good("Every lesson on this track is done.")} ${nextStep("pick another:", "agbar tracks")}`);
   } else if (next !== -1) {
     console.log(`${pc.bold(pc.green("Next:"))} ${command(lessonStep(track.steps[next].unit!.language, track.steps[next].unit!.unitId).cmd)}`);
   }

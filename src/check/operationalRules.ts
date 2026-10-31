@@ -306,7 +306,7 @@ export const OPERATIONAL_RULES: RuleDefinition[] = [
           if (localTarget.test(lines[i])) continue;
           // A leading backslash is the escape for a template slot written inside a JS/TS
           // template string: `\${POSTGRES_PASSWORD:-postgres}` is still the placeholder
-          // ${...}, not a password. buildquick's own scaffold templates tripped this.
+          // ${...}, not a password. agbar's own scaffold templates tripped this.
           const m = credentialPatterns.map((re) => re.exec(lines[i])).find((hit) => hit !== null && !placeholder.test(hit[2].replace(/^\\+/, "")));
           if (m) {
             return {

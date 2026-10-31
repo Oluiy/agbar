@@ -6,13 +6,13 @@ import { printTrackDetail } from "./learn/tracksCommand.js";
 import type { NonInteractiveFlags } from "./nonInteractive.js";
 
 /**
- * What bare `buildquick` shows a person at a terminal. It used to start the
+ * What bare `agbar` shows a person at a terminal. It used to start the
  * project scaffolder's questions straight away - so someone who came to learn
  * landed on "Project name?". Now it asks what they're here for; scaffolding is
- * one option, and `buildquick MyApi` or any flag still goes straight to it.
+ * one option, and `agbar MyApi` or any flag still goes straight to it.
  */
 
-/** True only for a person typing plain `buildquick` - scripts, pipes and flags keep the old behaviour. */
+/** True only for a person typing plain `agbar` - scripts, pipes and flags keep the old behaviour. */
 export function shouldShowWelcome(projectNameArg: string | undefined, opts: NonInteractiveFlags & { yes?: boolean }): boolean {
   if (projectNameArg || !process.stdin.isTTY || !process.stdout.isTTY) return false;
   const scaffoldFlag =

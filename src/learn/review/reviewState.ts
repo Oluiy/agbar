@@ -12,7 +12,7 @@ import type { QuestionState } from "./schedule.js";
 export type ReviewStateMap = Record<string, QuestionState>;
 
 export function defaultReviewStatePath(language: string): string {
-  return path.join(os.homedir(), ".buildquick", "learn", "review", `${language}.json`);
+  return path.join(os.homedir(), ".agbar", "learn", "review", `${language}.json`);
 }
 
 export function questionKey(unitId: string, questionId: string): string {

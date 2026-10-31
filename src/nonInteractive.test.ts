@@ -36,7 +36,7 @@ const stacks = [fakeAdapter, noninteractiveUnsupportedAdapter];
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-test-"));
 });
 
 afterEach(() => {

@@ -62,7 +62,7 @@ function editDistance(a: string, b: string): number {
 
 /**
  * The project name argument swallows anything, so a mistyped command used to
- * silently start scaffolding a project named after the typo - `buildquick chekc`
+ * silently start scaffolding a project named after the typo - `agbar chekc`
  * would generate ./chekc rather than saying "did you mean check?". Catch the
  * near-misses before generation starts.
  */
@@ -75,7 +75,7 @@ function misspelledCommand(arg: string | undefined): string | undefined {
 const program = new Command();
 
 program
-  .name("buildquick")
+  .name("agbar")
   .description("Interactive universal backend scaffolder: pick a stack and get a fully-wired, Clean-Architecture-shaped solution in seconds.")
   .version("0.1.0")
   .argument("[projectName]", "Project name (skips the name prompt)")
@@ -99,7 +99,7 @@ program
     const typo = misspelledCommand(projectNameArg);
     if (typo) {
       console.error(pc.red(`Unknown command '${projectNameArg}'. Did you mean '${typo}'?`));
-      console.error(pc.dim(`If you really meant to scaffold a project called '${projectNameArg}', run: buildquick ${projectNameArg} --stack springboot`));
+      console.error(pc.dim(`If you really meant to scaffold a project called '${projectNameArg}', run: agbar ${projectNameArg} --stack springboot`));
       process.exitCode = 1;
       return;
     }
@@ -173,7 +173,7 @@ program
   .description("Interactive lessons, graded by real checks - independent of scaffolding a project")
   .argument("[course]", "A course: traps | regex | yaml | reading | algorithms | refactoring | rust (omit to see them all)")
   .argument("[lesson]", "A lesson's number (1, 2...) or any part of its name (omit to list the lessons)")
-  .option("--submit <challengeId>", "Grade a challenge in this lesson (or just use: buildquick submit)")
+  .option("--submit <challengeId>", "Grade a challenge in this lesson (or just use: agbar submit)")
   .option("--status", "Show your progress instead of listing/opening units")
   .option("--review", "Quiz yourself on what's due (all languages if none given); questions return at growing intervals")
   .action(async (language: string | undefined, unitId: string | undefined, opts: { submit?: string; status?: boolean; review?: string | boolean }) => {
@@ -284,39 +284,39 @@ program
 program.addHelpText(
   "beforeAll",
   `
-New here? Run  buildquick  on its own for a menu.
+New here? Run  agbar  on its own for a menu.
 
 Learn
-  buildquick tracks first-steps   A guided path - the easiest place to start
-  buildquick learn                Courses of short lessons, graded as you go
-  buildquick submit               Grade your answer for the lesson you're on
-  buildquick learn --review       Quick quiz on what you've learned, so it sticks
-  buildquick concepts <word>      Look anything up: concepts money, concepts timeout
+  agbar tracks first-steps   A guided path - the easiest place to start
+  agbar learn                Courses of short lessons, graded as you go
+  agbar submit               Grade your answer for the lesson you're on
+  agbar learn --review       Quick quiz on what you've learned, so it sticks
+  agbar concepts <word>      Look anything up: concepts money, concepts timeout
 
 Check
-  buildquick check                Find problems in a project, with why each matters
-  buildquick regex '<re>' text    See what a regex matches, and its pitfalls
-  buildquick cron "<expr>"        See exactly when a schedule will run
+  agbar check                Find problems in a project, with why each matters
+  agbar regex '<re>' text    See what a regex matches, and its pitfalls
+  agbar cron "<expr>"        See exactly when a schedule will run
 
 Build
-  buildquick <ProjectName>        Create a new backend project
+  agbar <ProjectName>        Create a new backend project
 `
 );
 
 program.addHelpText(
   "after",
-  "\nRun 'buildquick concepts' any time - during scaffolding or in the middle of writing your own code - to look up things like caching, rate limiting, or idempotency without leaving the terminal." +
-    "\nRun 'buildquick learn rust' for interactive lessons with real pass/fail checks, independent of scaffolding a project." +
-    "\nRun 'buildquick tracks' for ordered paths through both, for students, interview prep, production readiness, or onboarding." +
-    '\nTeams can ship their own lessons and tracks by pointing BUILDQUICK_CONTENT (or .buildquickrc\'s "contentDir") at their own content directory.'
+  "\nRun 'agbar concepts' any time - during scaffolding or in the middle of writing your own code - to look up things like caching, rate limiting, or idempotency without leaving the terminal." +
+    "\nRun 'agbar learn rust' for interactive lessons with real pass/fail checks, independent of scaffolding a project." +
+    "\nRun 'agbar tracks' for ordered paths through both, for students, interview prep, production readiness, or onboarding." +
+    '\nTeams can ship their own lessons and tracks by pointing AGBAR_CONTENT (or .agbarrc\'s "contentDir") at their own content directory.'
 );
 
 // Every "fail loudly" error (a corrupted progress file, a broken lesson, a bad
-// .buildquickrc) is written to be read by a person: print the message, not a
-// stack trace. BUILDQUICK_DEBUG=1 brings the trace back for bug reports.
+// .agbarrc) is written to be read by a person: print the message, not a
+// stack trace. AGBAR_DEBUG=1 brings the trace back for bug reports.
 program.parseAsync().catch((err: unknown) => {
   const error = err instanceof Error ? err : new Error(String(err));
   console.error(pc.red(error.message));
-  if (process.env.BUILDQUICK_DEBUG) console.error(error.stack);
+  if (process.env.AGBAR_DEBUG) console.error(error.stack);
   process.exitCode = 1;
 });

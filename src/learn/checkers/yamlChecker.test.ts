@@ -8,7 +8,7 @@ import { yamlChecker } from "./yamlChecker.js";
 
 let dir: string;
 beforeEach(() => {
-  dir = mkdtempSync(path.join(tmpdir(), "buildquick-yaml-"));
+  dir = mkdtempSync(path.join(tmpdir(), "agbar-yaml-"));
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 

@@ -33,7 +33,7 @@ function seedKit(): void {
 const read = (rel: string) => readFileSync(path.join(dir, rel), "utf-8");
 
 beforeEach(() => {
-  dir = mkdtempSync(path.join(tmpdir(), "buildquick-adonis-"));
+  dir = mkdtempSync(path.join(tmpdir(), "agbar-adonis-"));
   seedKit();
 });
 
@@ -42,7 +42,7 @@ afterEach(() => {
 });
 
 describe("applyOverlay", () => {
-  it("keeps the kit's own routes and appends buildquick's, rate limited, with probes outside the limiter", () => {
+  it("keeps the kit's own routes and appends agbar's, rate limited, with probes outside the limiter", () => {
     applyOverlay(dir, "Api", true);
     const routes = read("start/routes.ts");
     expect(routes.startsWith("import router from '@adonisjs/core/services/router'")).toBe(true);

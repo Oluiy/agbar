@@ -14,7 +14,7 @@ import { checkCancel } from "./utils/prompts.js";
  * needs it asks its own version inside promptAddons().
  */
 export async function runPrompts(stacks: StackAdapter[], projectNameArg?: string): Promise<{ config: ScaffoldConfig; adapter: StackAdapter }> {
-  intro("buildquick - universal backend scaffolder");
+  intro("agbar - universal backend scaffolder");
 
   let projectName: string;
   if (projectNameArg) {

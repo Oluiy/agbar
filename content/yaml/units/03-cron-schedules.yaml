@@ -45,7 +45,7 @@ explanation: |
     touching the same data at once is how records get processed twice. A
     `concurrency` group allows at most one run in progress at a time.
 
-  Run `buildquick cron "30 9 * * 1-5"` to see the next times any expression
+  Run `agbar cron "30 9 * * 1-5"` to see the next times any expression
   will fire - the fastest way to check you wrote what you meant.
 example_code: |
   on:
@@ -64,7 +64,7 @@ challenges:
   - id: "weekday-standup"
     prompt: |
       Make this workflow run at 09:30 UTC, Monday to Friday only.
-      Run `buildquick cron "<your expression>"` to check it before submitting.
+      Run `agbar cron "<your expression>"` to check it before submitting.
     starter_code: |
       name: Standup reminder
       on:

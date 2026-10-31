@@ -1,7 +1,7 @@
-# Contributing to buildquick
+# Contributing to agbar
 
 Thanks for helping. The most valuable contribution is a **false positive**: a finding
-`buildquick check` reported that was wrong. Precision is this project's top priority -
+`agbar check` reported that was wrong. Precision is this project's top priority -
 a checker that cries wolf gets uninstalled.
 
 ## Set up

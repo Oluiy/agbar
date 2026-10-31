@@ -11,7 +11,7 @@ import { applyOverlay } from "./overlay.js";
 /**
  * AdonisJS 7. Unlike the other adapters there is no hand-written fallback: the project
  * *is* the official `api` starter kit (`npm create adonisjs -- --kit=api`), which ships
- * auth, conventions and a tool-version set the Adonis team maintains. buildquick then adds
+ * auth, conventions and a tool-version set the Adonis team maintains. agbar then adds
  * @adonisjs/limiter with Adonis's own `node ace add`, and overlays the example feature,
  * probes and tests (overlay.ts). With no network the kit cannot be fetched, so generation
  * fails with a clear message rather than producing a hand-rolled imitation.
@@ -37,9 +37,7 @@ const NPM_ENV = {
 function assertNodeVersion(): void {
   const major = Number(process.versions.node.split(".")[0]);
   if (major < 24) {
-    throw new Error(
-      `AdonisJS 7 needs Node 24 or newer; this is Node ${process.versions.node}. Install Node 24 (e.g. "nvm install 24") and run buildquick again.`
-    );
+    throw new Error(`AdonisJS 7 needs Node 24 or newer; this is Node ${process.versions.node}. Install Node 24 (e.g. "nvm install 24") and run agbar again.`);
   }
 }
 

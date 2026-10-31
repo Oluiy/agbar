@@ -17,7 +17,7 @@ export type ProgressMap = Record<string, UnitProgress>;
 
 /** Path is injectable so tests never touch the real home directory - same DI convention as ScaffoldConfig.outputDirectory. */
 export function defaultProgressPath(language: string): string {
-  return path.join(os.homedir(), ".buildquick", "learn", "progress", `${language}.json`);
+  return path.join(os.homedir(), ".agbar", "learn", "progress", `${language}.json`);
 }
 
 export function loadProgress(progressPath: string): ProgressMap {

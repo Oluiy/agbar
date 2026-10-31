@@ -13,7 +13,7 @@ import { AXUM_STRUCTURES } from "./types.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-axum-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-axum-test-"));
 });
 
 afterEach(() => {

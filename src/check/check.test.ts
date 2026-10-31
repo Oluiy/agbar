@@ -12,7 +12,7 @@ import { STACK_ADVICE } from "./stackAdvice.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-check-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-check-test-"));
 });
 
 afterEach(() => {
@@ -173,7 +173,7 @@ describe("no-schema-migrations (unblocked once the schema-migrations concept was
       "prisma/migrations/20260101_init/migration.sql",
       "src/main/resources/db/migration/V1__init.sql",
     ]) {
-      const dir = mkdtempSync(path.join(tmpdir(), "buildquick-migrations-"));
+      const dir = mkdtempSync(path.join(tmpdir(), "agbar-migrations-"));
       mkdirSync(path.dirname(path.join(dir, migrationPath)), { recursive: true });
       writeFileSync(path.join(dir, migrationPath), "-- migration", "utf-8");
       writeFileSync(path.join(dir, "package.json"), JSON.stringify({ dependencies: { pg: "^8" } }), "utf-8");
@@ -264,7 +264,7 @@ describe("expanded coverage: hardcoded-db-credentials, no-circuit-breaker, in-me
       "# e.g. postgres://user:<password>@host/db",
       "const url = `postgres://user:${DB_PASSWORD}@localhost/app`;",
     ]) {
-      const dir = mkdtempSync(path.join(tmpdir(), "buildquick-check-test-"));
+      const dir = mkdtempSync(path.join(tmpdir(), "agbar-check-test-"));
       writeFileSync(path.join(dir, "src.js"), line, "utf-8");
       const report = runCheck(scanRepo(dir));
       expect(
@@ -452,7 +452,7 @@ describe("scoping", () => {
     expect(findingIds()).not.toContain("unbounded-list-query");
   });
 
-  // Regression: this fired on buildquick's own test fixtures the first time it was
+  // Regression: this fired on agbar's own test fixtures the first time it was
   // run against a real repo.
   it("does not flag fake key material in a test file", () => {
     writeCleanApp();
@@ -688,10 +688,10 @@ describe("false positives found running against Idari and ai-cost-guard", () => 
     expect(f?.evidence).toContain("store.go:1");
   });
 
-  it('{"kind": "cli"} in .buildquickrc skips production-service checks, and says so', () => {
+  it('{"kind": "cli"} in .agbarrc skips production-service checks, and says so', () => {
     write("package.json", JSON.stringify({ dependencies: { express: "^4" } }));
     write("src/app.js", 'app.get("/items", (r, s) => s.json([]));');
-    write(".buildquickrc", JSON.stringify({ kind: "local-tool" }));
+    write(".agbarrc", JSON.stringify({ kind: "local-tool" }));
     const report = runCheck(scanRepo(tmpDir));
     expect(report.findings.map((f) => f.ruleId)).not.toContain("no-rate-limiting");
     expect(report.skippedForKind).toEqual(expect.arrayContaining(["no-rate-limiting", "no-healthcheck"]));
@@ -699,7 +699,7 @@ describe("false positives found running against Idari and ai-cost-guard", () => 
   });
 
   it("a typo'd kind fails loudly instead of silently running every rule", () => {
-    write(".buildquickrc", JSON.stringify({ kind: "clii" }));
+    write(".agbarrc", JSON.stringify({ kind: "clii" }));
     expect(() => scanRepo(tmpDir)).toThrow(/"kind" must be one of/);
   });
 });
@@ -809,7 +809,7 @@ describe("the report says where to start", () => {
   });
 });
 
-describe("escaped template placeholders (found by buildquick checking its own source)", () => {
+describe("escaped template placeholders (found by agbar checking its own source)", () => {
   it("\\${VAR:-default} inside a TS template string is a placeholder, not a hardcoded password", () => {
     write("package.json", '{"dependencies":{"express":"5"}}');
     write("src/templates/compose.ts", "const y = `\n      DATABASE_URL: postgres://postgres:\\${POSTGRES_PASSWORD:-postgres}@db:5432/app\n`;\n");
@@ -925,7 +925,7 @@ describe("held-out repo false positives (found on repos never used to tune the r
   });
 });
 
-describe("AdonisJS (found by grading buildquick's own Adonis scaffold)", () => {
+describe("AdonisJS (found by grading agbar's own Adonis scaffold)", () => {
   const routes = "import router from '@adonisjs/core/services/router'\nrouter.get('/api/v1/items', [ItemsController, 'index'])\n";
 
   it("an Adonis API counts as an HTTP service, so a missing limiter and health check are flagged", () => {
@@ -945,7 +945,7 @@ describe("AdonisJS (found by grading buildquick's own Adonis scaffold)", () => {
   });
 });
 
-describe("implicit-database ORMs (found by grading buildquick's own Django scaffold)", () => {
+describe("implicit-database ORMs (found by grading agbar's own Django scaffold)", () => {
   it("a Django project counts as a database app even though it lists no driver", () => {
     // SQLite needs no driver package, so requirements.txt names only django.
     write("requirements.txt", "django>=5.2\ndjangorestframework>=3.16\n");
@@ -1402,7 +1402,7 @@ describe("no-lockfile", () => {
 
   it("does not apply to a library, which omits one on purpose", () => {
     writeCleanApp();
-    write(".buildquickrc", '{"kind":"library"}');
+    write(".agbarrc", '{"kind":"library"}');
 
     expect(findingIds()).not.toContain("no-lockfile");
   });

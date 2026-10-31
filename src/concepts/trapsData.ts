@@ -19,7 +19,7 @@ export const DATA_TRAP_CONCEPTS: Concept[] = [
 "caf\\u00e9" === "cafe\\u0301";                                    // false
 // Good: normalize at the boundary
 "caf\\u00e9".normalize("NFC") === "cafe\\u0301".normalize("NFC");  // true`,
-    practice: "buildquick learn traps 01-text-traps",
+    practice: "agbar learn traps 01-text-traps",
   },
   {
     id: "string-length",
@@ -35,7 +35,7 @@ Buffer.byteLength(e);                          // 15 UTF-8 bytes
 [...new Intl.Segmenter().segment(e)].length;   // 1  what a person sees
 // Good: truncate by grapheme, not by index
 const visible = [...new Intl.Segmenter().segment(name)].slice(0, 20).map((s) => s.segment).join("");`,
-    practice: "buildquick learn traps 01-text-traps",
+    practice: "agbar learn traps 01-text-traps",
   },
   {
     id: "locale-case-mapping",
@@ -60,7 +60,7 @@ In JS:     "TITLE".toLowerCase()            // "title" - safe
     example: `"admin\\u200b".trim() === "admin";                              // false - trim misses it
 const clean = (s) => s.replace(/[\\u200b-\\u200d\\ufeff]/g, "").trim();
 clean("admin\\u200b") === "admin";                               // true`,
-    practice: "buildquick learn traps 01-text-traps",
+    practice: "agbar learn traps 01-text-traps",
   },
   {
     id: "regex-anchoring",
@@ -73,7 +73,7 @@ clean("admin\\u200b") === "admin";                               // true`,
 /[\\w.+-]+@[\\w-]+\\.[a-z]{2,}/.test("junk a@b.com junk");     // true
 // Good: the whole input must be the email
 /^[\\w.+-]+@[\\w-]+\\.[a-z]{2,}$/.test("junk a@b.com junk");   // false`,
-    practice: "buildquick learn regex 01-anchors-and-escapes",
+    practice: "agbar learn regex 01-anchors-and-escapes",
   },
   {
     id: "redos",
@@ -86,7 +86,7 @@ clean("admin\\u200b") === "admin";                               // true`,
 const slow = /^(a+)+$/;
 // Good: same meaning, linear time
 const fast = /^a+$/;`,
-    practice: "buildquick learn regex 03-regex-that-bites",
+    practice: "agbar learn regex 03-regex-that-bites",
   },
   {
     id: "floating-point-money",
@@ -99,7 +99,7 @@ const fast = /^a+$/;`,
 0.1 + 0.2;                  // 0.30000000000000004
 // Good: integer cents
 const totalCents = 10 + 20; // 30 -> format as "0.30" only for display`,
-    practice: "buildquick learn traps 02-number-traps",
+    practice: "agbar learn traps 02-number-traps",
   },
   {
     id: "big-integer-ids",
@@ -112,7 +112,7 @@ const totalCents = 10 + 20; // 30 -> format as "0.30" only for display`,
 JSON.parse('{"id":182947192837491823}').id;     // 182947192837491800
 // Good: a string survives intact
 JSON.parse('{"id":"182947192837491823"}').id;   // "182947192837491823"`,
-    practice: "buildquick learn traps 02-number-traps",
+    practice: "agbar learn traps 02-number-traps",
   },
   {
     id: "integer-overflow",
@@ -137,7 +137,7 @@ NaN > 0;                        // false
 NaN <= 0;                       // false - both branches skipped
 // Good
 if (!Number.isFinite(avg)) throw new Error("no data to average");`,
-    practice: "buildquick learn traps 02-number-traps",
+    practice: "agbar learn traps 02-number-traps",
   },
   {
     id: "rounding-modes",
@@ -149,7 +149,7 @@ if (!Number.isFinite(avg)) throw new Error("no data to average");`,
     example: `Math.round(2.5);    // 3
 Math.round(-2.5);   // -2   (JS rounds halves toward +infinity)
 // Python: round(2.5) == 2, round(3.5) == 4, round(2.675, 2) == 2.67`,
-    practice: "buildquick learn traps 02-number-traps",
+    practice: "agbar learn traps 02-number-traps",
   },
   {
     id: "falsy-zero",
@@ -161,7 +161,7 @@ Math.round(-2.5);   // -2   (JS rounds halves toward +infinity)
     example: `const stock = 0;
 stock || 10;   // bad: 10
 stock ?? 10;   // good: 0`,
-    practice: "buildquick learn traps 02-number-traps",
+    practice: "agbar learn traps 02-number-traps",
   },
   {
     id: "monotonic-clocks",
@@ -175,7 +175,7 @@ const t0 = Date.now();
 // Good: only ever moves forward
 const t1 = performance.now();
 const elapsedMs = performance.now() - t1;`,
-    practice: "buildquick learn traps 03-time-traps",
+    practice: "agbar learn traps 03-time-traps",
   },
   {
     id: "daylight-saving-time",
@@ -189,7 +189,7 @@ const bad = new Date(start.getTime() + 24 * 60 * 60 * 1000);
 // Good: the next calendar day, same local time
 const next = new Date(start);
 next.setDate(next.getDate() + 1);`,
-    practice: "buildquick learn traps 03-time-traps",
+    practice: "agbar learn traps 03-time-traps",
   },
   {
     id: "week-based-year",
@@ -212,6 +212,6 @@ next.setDate(next.getDate() + 1);`,
     example: `const d = new Date(Date.UTC(2024, 1, 29));
 d.setUTCFullYear(2025);
 d.toISOString().slice(0, 10);   // "2025-03-01" - silently not Feb 28`,
-    practice: "buildquick learn traps 03-time-traps",
+    practice: "agbar learn traps 03-time-traps",
   },
 ];

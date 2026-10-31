@@ -9,7 +9,7 @@ const JEST = "node --experimental-vm-modules ./node_modules/jest/bin/jest.js";
 const JS_EXTENSION_MAP = { "^(\\.{1,2}/.*)\\.js$": "$1" };
 
 /**
- * The dependencies and scripts buildquick adds on top of a base.
+ * The dependencies and scripts agbar adds on top of a base.
  *
  * Split out from packageJson so the CLI path can merge exactly these into the
  * manifest `nest new` wrote - keeping the Nest team's versions for everything they
@@ -333,7 +333,7 @@ npm run db:migrate -- --name init
 
   return `# ${projectName}
 
-A NestJS service generated with [buildquick](https://github.com/Oluiy/aggregator),
+A NestJS service generated with [agbar](https://github.com/Oluiy/aggregator),
 using the **${structure}** structure${orm === "none" ? "" : ` and **${orm}**`}. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for why it is shaped this way.
 
@@ -377,7 +377,7 @@ ${orm === "prisma" ? "npm run test:e2e    # full HTTP tests; resets a throwaway 
 ## Grade it
 
 \`\`\`bash
-buildquick check
+agbar check
 \`\`\`
 `;
 }
@@ -422,7 +422,7 @@ queries?" has one answer per feature.`;
 
   return `# Architecture
 
-${projectName}, generated with buildquick. This records the decisions so the next
+${projectName}, generated with agbar. This records the decisions so the next
 person does not have to reverse-engineer them.
 
 ## Structure: ${structure}
@@ -465,6 +465,6 @@ ${orm === "prisma" ? "| Change the schema | Edit `prisma/schema.prisma`, then `n
 
 Authentication, caching, tracing and a message queue. Each is a real decision that
 depends on your deployment, and a wrong default is worse than an obvious gap. Run
-\`buildquick check\` on this project to see what it still flags, with the reasoning.
+\`agbar check\` on this project to see what it still flags, with the reasoning.
 `;
 }

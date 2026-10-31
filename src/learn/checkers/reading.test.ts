@@ -10,7 +10,7 @@ import { predictionChecker } from "./predictionChecker.js";
 
 let dir: string;
 beforeEach(() => {
-  dir = mkdtempSync(path.join(tmpdir(), "buildquick-reading-"));
+  dir = mkdtempSync(path.join(tmpdir(), "agbar-reading-"));
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 

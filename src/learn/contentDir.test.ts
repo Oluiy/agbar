@@ -6,16 +6,16 @@ import { bundledContentRoot, contentRoots, resolveContentPath } from "./contentD
 import { loadUnits } from "./loader.js";
 
 let tmpDir: string;
-const originalEnv = process.env.BUILDQUICK_CONTENT;
+const originalEnv = process.env.AGBAR_CONTENT;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-content-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-content-test-"));
 });
 
 afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
-  if (originalEnv === undefined) delete process.env.BUILDQUICK_CONTENT;
-  else process.env.BUILDQUICK_CONTENT = originalEnv;
+  if (originalEnv === undefined) delete process.env.AGBAR_CONTENT;
+  else process.env.AGBAR_CONTENT = originalEnv;
 });
 
 describe("content roots", () => {
@@ -23,15 +23,15 @@ describe("content roots", () => {
     expect(bundledContentRoot()).toBeDefined();
   });
 
-  it("puts a BUILDQUICK_CONTENT directory ahead of the bundled one", () => {
-    process.env.BUILDQUICK_CONTENT = tmpDir;
+  it("puts a AGBAR_CONTENT directory ahead of the bundled one", () => {
+    process.env.AGBAR_CONTENT = tmpDir;
     const roots = contentRoots();
     expect(roots[0]).toBe(tmpDir);
     expect(roots).toHaveLength(2);
   });
 
   it("falls through to bundled content for anything the custom root doesn't provide", () => {
-    process.env.BUILDQUICK_CONTENT = tmpDir; // empty - provides nothing
+    process.env.AGBAR_CONTENT = tmpDir; // empty - provides nothing
     expect(resolveContentPath("tracks.yaml")).toContain("content");
     expect(loadUnits("rust").length).toBeGreaterThan(0);
   });
@@ -59,7 +59,7 @@ challenges:
       "utf-8"
     );
 
-    process.env.BUILDQUICK_CONTENT = tmpDir;
+    process.env.AGBAR_CONTENT = tmpDir;
     const units = loadUnits("go");
     expect(units).toHaveLength(1);
     expect(units[0].title).toBe("Custom");
@@ -88,7 +88,7 @@ challenges:
       "utf-8"
     );
 
-    process.env.BUILDQUICK_CONTENT = tmpDir;
+    process.env.AGBAR_CONTENT = tmpDir;
     const units = loadUnits("rust");
     expect(units.map((u) => u.id)).toEqual(["team-rust"]);
   });

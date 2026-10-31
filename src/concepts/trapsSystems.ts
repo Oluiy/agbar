@@ -17,7 +17,7 @@ export const SYSTEM_TRAP_CONCEPTS: Concept[] = [
 app.put("/users/:id/email", setEmail);
 // Good: creates something - POST, with an Idempotency-Key header
 app.post("/payments", chargeOnce);`,
-    practice: "buildquick learn traps 04-api-and-file-traps",
+    practice: "agbar learn traps 04-api-and-file-traps",
   },
   {
     id: "socket-exhaustion",
@@ -55,7 +55,7 @@ In Java (java.security):
     example: `const headers = new Headers({ authorization: "Bearer abc" });
 ({ ...headers });                          // bad: {}
 Object.fromEntries(headers.entries());     // good: { authorization: "Bearer abc" }`,
-    practice: "buildquick learn traps 04-api-and-file-traps",
+    practice: "agbar learn traps 04-api-and-file-traps",
   },
   {
     id: "sql-null-logic",
@@ -217,7 +217,7 @@ if (privateRange.test(address)) throw new Error("URL points at an internal addre
 path.join("/var/uploads", "../../etc/passwd");   // "/etc/passwd" - escaped
 // Good: we choose the name
 const safe = path.join("/var/uploads", \`\${crypto.randomUUID()}.png\`);`,
-    practice: "buildquick learn traps 04-api-and-file-traps",
+    practice: "agbar learn traps 04-api-and-file-traps",
   },
   {
     id: "atomic-file-writes",
@@ -230,7 +230,7 @@ const safe = path.join("/var/uploads", \`\${crypto.randomUUID()}.png\`);`,
 const tmp = "state.json.tmp";
 writeFileSync(tmp, JSON.stringify(state));   // for full durability, fsync before renaming
 renameSync(tmp, "state.json");               // atomic on the same filesystem`,
-    practice: "buildquick learn traps 04-api-and-file-traps",
+    practice: "agbar learn traps 04-api-and-file-traps",
   },
   {
     id: "filesystem-case-sensitivity",

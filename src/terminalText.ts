@@ -6,7 +6,7 @@ import { attention, bad, dim, good, name } from "./ui/palette.js";
  * `code` - and used to be printed as-is, so the terminal showed literal
  * asterisks and backticks and the emphasis the author wrote never landed.
  *
- * Colour is meaning, the same everywhere in buildquick: bold yellow = the point
+ * Colour is meaning, the same everywhere in agbar: bold yellow = the point
  * to remember, cyan = code / something you type, red = the failure, green = the
  * fix, dim = asides. When colour is off (piped output, NO_COLOR), the text is
  * returned unchanged, so the markers still carry the emphasis.

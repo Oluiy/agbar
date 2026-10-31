@@ -132,7 +132,7 @@ volumes:
 export function readmeMd(projectName: string, structure: AxumStructure, db: AxumDb): string {
   return `# ${projectName}
 
-An Axum service generated with [buildquick](https://github.com/Oluiy/aggregator), using the
+An Axum service generated with [agbar](https://github.com/Oluiy/aggregator), using the
 **${structure}** structure and **sqlx** on **${db === "sqlite" ? "SQLite" : "PostgreSQL"}**. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for why it is shaped this way.
 
@@ -181,7 +181,7 @@ cargo fmt                        # formatting
 ## Grade it
 
 \`\`\`bash
-buildquick check
+agbar check
 \`\`\`
 `;
 }
@@ -224,7 +224,7 @@ the domain needs to stop knowing about sqlx and serde.`;
 
   return `# Architecture
 
-${projectName}, generated with buildquick. This records the decisions so the next person
+${projectName}, generated with agbar. This records the decisions so the next person
 does not have to reverse-engineer them.
 
 ## Structure: ${structure}
@@ -269,6 +269,6 @@ ${db === "sqlite" ? "| **SQLite pool waits are bounded** | `acquire_timeout` sto
 
 Authentication, caching, tracing export and a message queue. Each is a real decision that
 depends on your deployment, and a wrong default is worse than an obvious gap. Run
-\`buildquick check\` on this project to see what it still flags, with the reasoning.
+\`agbar check\` on this project to see what it still flags, with the reasoning.
 `;
 }

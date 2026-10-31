@@ -7,7 +7,7 @@ import { findTrack, loadTracks } from "./tracks.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-tracks-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-tracks-test-"));
 });
 
 afterEach(() => {

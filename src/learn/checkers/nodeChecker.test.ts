@@ -9,7 +9,7 @@ import { nodeChecker } from "./nodeChecker.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-nodechecker-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-nodechecker-test-"));
 });
 
 afterEach(() => {

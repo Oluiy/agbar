@@ -1,10 +1,10 @@
 {
-  "name": "buildquick",
+  "name": "agbar",
   "version": "0.1.0",
   "description": "Scaffold a backend project, grade an existing one, and practise the engineering concepts behind both - with real pass/fail checks, not quizzes.",
   "type": "module",
   "bin": {
-    "buildquick": "./dist/cli.js"
+    "agbar": "./dist/cli.js"
   },
   "files": [
     "dist",

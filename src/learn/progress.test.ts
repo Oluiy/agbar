@@ -8,7 +8,7 @@ let tmpDir: string;
 let progressPath: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-progress-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-progress-test-"));
   progressPath = path.join(tmpDir, "rust.json");
 });
 

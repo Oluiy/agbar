@@ -11,12 +11,12 @@ please be patient.
 
 ## What counts
 
-buildquick runs entirely on your machine and sends nothing anywhere. The things worth
+agbar runs entirely on your machine and sends nothing anywhere. The things worth
 reporting are the ones that could harm the person running it:
 
 - **Secret leakage:** `check` printing a credential or key value instead of masking it.
   Findings are meant to show only `file:line` and a redacted line.
-- **Unsafe file writes:** scaffolding (`buildquick` with no arguments) writing outside the
+- **Unsafe file writes:** scaffolding (`agbar` with no arguments) writing outside the
   target directory, for example through a crafted project name.
 - **Unintended code execution:** the graded lessons run `node --test` or `cargo` against
   code *you* write in a lesson file. Anything that runs code you didn't write, or that

@@ -52,10 +52,10 @@ export function printLearningSuggestions(config: ScaffoldConfig, adapter: StackA
 
   clack.log.message(pc.bold("Next, to understand what you just built:"));
   if (track) {
-    clack.log.message(`    ${pc.bold(track.title)} - ${pc.dim(`buildquick tracks ${track.trackId}`)}\n    ${track.reason}`);
+    clack.log.message(`    ${pc.bold(track.title)} - ${pc.dim(`agbar tracks ${track.trackId}`)}\n    ${track.reason}`);
   }
   for (const concept of concepts) {
-    clack.log.message(`    ${pc.dim(`buildquick concepts ${concept.conceptId}`)} - ${concept.reason}`);
+    clack.log.message(`    ${pc.dim(`agbar concepts ${concept.conceptId}`)} - ${concept.reason}`);
   }
 }
 

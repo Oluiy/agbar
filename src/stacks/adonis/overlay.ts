@@ -28,14 +28,13 @@ function patch(projectDir: string, relPath: string, find: string, replace: strin
   const count = text.split(find).length - 1;
   if (count !== 1) {
     throw new Error(
-      `AdonisJS starter kit changed: expected exactly one "${find}" in ${relPath}, found ${count}. ` +
-        "buildquick's overlay needs updating for this kit version."
+      `AdonisJS starter kit changed: expected exactly one "${find}" in ${relPath}, found ${count}. ` + "agbar's overlay needs updating for this kit version."
     );
   }
   writeFileSync(file, text.replace(find, replace), "utf-8");
 }
 
-/** Adds buildquick's layer to a project created from the official `api` kit, with @adonisjs/limiter already added. */
+/** Adds agbar's layer to a project created from the official `api` kit, with @adonisjs/limiter already added. */
 export function applyOverlay(projectDir: string, projectName: string, includeTests: boolean): void {
   const write = (relPath: string, contents: string) => writeFile(path.join(projectDir, relPath), contents);
 

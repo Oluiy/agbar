@@ -14,7 +14,7 @@ import { NODE_VERSIONS } from "./versions.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-node-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-node-test-"));
 });
 
 afterEach(() => {

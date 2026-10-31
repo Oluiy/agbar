@@ -3,7 +3,7 @@ import type { Challenge, Unit } from "./types.js";
 
 /**
  * Where am I, and where next? The pure logic behind making lessons easy to
- * reach: typing `2` instead of `02-number-traps`, `buildquick submit` without
+ * reach: typing `2` instead of `02-number-traps`, `agbar submit` without
  * retyping anything, and always ending on a concrete next step.
  */
 

@@ -6,7 +6,7 @@ core: true
 estimated_minutes: 25
 key_idea: "An LRU (least recently used) cache is a hash map plus an order of use - and a JavaScript Map is already both."
 explanation: |
-  `buildquick concepts caching` says to put frequently-read data in memory. That
+  `agbar concepts caching` says to put frequently-read data in memory. That
   raises the question every cache eventually has to answer: memory is finite, so
   when it's full, what gets evicted?
 

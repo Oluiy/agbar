@@ -6,7 +6,7 @@ import { readJsonFile } from "./jsonFile.js";
 
 let dir: string;
 beforeEach(() => {
-  dir = mkdtempSync(path.join(tmpdir(), "buildquick-json-"));
+  dir = mkdtempSync(path.join(tmpdir(), "agbar-json-"));
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 

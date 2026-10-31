@@ -7,7 +7,7 @@ import { loadUnits } from "./loader.js";
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-learn-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-learn-test-"));
 });
 
 afterEach(() => {

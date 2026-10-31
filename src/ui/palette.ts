@@ -2,10 +2,10 @@ import os from "node:os";
 import pc from "picocolors";
 
 /**
- * The one palette. Every colour in buildquick's output is a role defined here -
+ * The one palette. Every colour in agbar's output is a role defined here -
  * one meaning per colour, the same in every command - the way Idari's style.rs
  * does it. Screens say what a thing IS (a command, a path, a title); this file
- * decides how it looks. To restyle buildquick, change this file.
+ * decides how it looks. To restyle agbar, change this file.
  *
  *   heading    bold underline   section titles: where the eye lands first
  *   name       bright cyan      the thing a line is about: a lesson, concept, track

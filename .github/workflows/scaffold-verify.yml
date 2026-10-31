@@ -1,6 +1,6 @@
 name: Verify generated projects
 
-# Proves that the projects buildquick generates actually install, typecheck, test and
+# Proves that the projects agbar generates actually install, typecheck, test and
 # build - not just that the file tree looks right. It runs:
 #   - on every PR that touches a stack (including Renovate's version-bump PRs),
 #   - weekly, because caret ranges pick up new upstream minors at install time even when
@@ -70,7 +70,7 @@ jobs:
           # The generated projects' own requirement (vitest 5, NestJS 12).
           node-version: 24
 
-      - name: Install buildquick
+      - name: Install agbar
         run: npm ci
 
       - name: Generate the project

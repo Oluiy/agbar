@@ -23,7 +23,7 @@ describe("initializrDependencies - pure mapping, no network", () => {
   });
 
   it("a database brings JPA, a migration tool, the driver, and H2 for tests", () => {
-    // flyway is requested so the generated project does not trip buildquick's own
+    // flyway is requested so the generated project does not trip agbar's own
     // no-schema-migrations rule; h2 so its tests run with no server.
     expect(initializrDependencies({ ...base, dbProvider: "postgres" })).toEqual(["web", "validation", "actuator", "data-jpa", "flyway", "postgresql", "h2"]);
     expect(initializrDependencies({ ...base, dbProvider: "mysql" })).toContain("mysql");
@@ -52,7 +52,7 @@ describe("resolveSpringBootAddons - useInitializr", () => {
 describe("springbootAdapter - the hand-written path still produces a complete build", () => {
   let tmpDir: string;
   beforeEach(() => {
-    tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-spring-bootstrap-"));
+    tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-spring-bootstrap-"));
   });
   afterEach(() => {
     rmSync(tmpDir, { recursive: true, force: true });
@@ -102,7 +102,7 @@ describe("springbootAdapter - the hand-written path still produces a complete bu
       outDir,
       noopContext
     );
-    const main = readFileSync(path.join(outDir, "src/main/java/com/buildquick/oneapp/OneAppApplication.java"), "utf-8");
+    const main = readFileSync(path.join(outDir, "src/main/java/com/agbar/oneapp/OneAppApplication.java"), "utf-8");
     expect(main.match(/@SpringBootApplication/g)).toHaveLength(1);
   });
 });

@@ -1,5 +1,5 @@
 /**
- * "Why does my project look like this?" - after generation, buildquick writes an
+ * "Why does my project look like this?" - after generation, agbar writes an
  * ARCHITECTURE.md into the project tying each structural choice that was actually
  * made to the engineering principle behind it, referencing the real classes that
  * were written, not abstract examples. The point isn't just scaffolding fast code -

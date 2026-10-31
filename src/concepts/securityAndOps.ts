@@ -1,4 +1,4 @@
-// buildquick-ignore-file sql-string-concatenation, password-fast-hash
+// agbar-ignore-file sql-string-concatenation, password-fast-hash
 // The "bad" halves of the injection and password examples are the lesson; they are
 // deliberately wrong so the fix beside them has something to contrast with.
 import type { Concept } from "./types.js";
@@ -41,7 +41,7 @@ app.use(rateLimit({ windowMs: 60_000, limit: 100 }));   // 100 req/min per clien
 
 // Go (Fiber)
 app.Use(limiter.New(limiter.Config{Max: 100, Expiration: time.Minute}))`,
-    practice: "buildquick learn algorithms 01-token-bucket",
+    practice: "agbar learn algorithms 01-token-bucket",
     title: "Rate limiting",
     category: "Security",
     failureScenario:
@@ -149,7 +149,7 @@ const safe = await db.query("SELECT * FROM users WHERE email = $1", [email]);
 // Sort column cannot be a parameter - allow-list it
 const SORTABLE = new Set(["created_at", "name"]);
 if (!SORTABLE.has(sort)) throw new Error("bad sort column");`,
-    practice: "buildquick learn security 02-injection",
+    practice: "agbar learn security 02-injection",
     references: [{ title: "OWASP Top 10:2025 - A05 Injection", url: "https://top10.owasp.org/2025/" }],
   },
   {
@@ -167,7 +167,7 @@ const invoice = await db.invoice.findUnique({ where: { id } });
 // Good: ownership is part of the lookup, so the wrong row never loads
 const owned = await db.invoice.findFirst({ where: { id, ownerId: session.userId } });
 if (!owned) return res.status(404).end();   // 404, not 403: do not confirm it exists`,
-    practice: "buildquick learn security 01-object-level-authorization",
+    practice: "agbar learn security 01-object-level-authorization",
     references: [{ title: "OWASP Top 10:2025 - A01 Broken Access Control", url: "https://top10.owasp.org/2025/" }],
   },
   {

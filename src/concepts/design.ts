@@ -13,7 +13,7 @@ app.post("/orders", async (req, res) => {
 function makeOrderHandler(orders /* { save(order) } */) {
   return async (req, res) => { await orders.save(req.body); res.sendStatus(201); };
 }`,
-    practice: "buildquick learn refactoring 02-depend-on-an-interface",
+    practice: "agbar learn refactoring 02-depend-on-an-interface",
     title: "Dependency inversion",
     category: "Design",
     failureScenario:
@@ -28,7 +28,7 @@ async function handle(req, res) { /* read body, compute discount, write to DB */
 // Split so each part changes for one reason - and the rule is testable alone
 function discountFor(order) { /* pure business rule, no I/O */ }
 async function handle(req, res) { await orders.save(applyDiscount(req.body)); }`,
-    practice: "buildquick learn refactoring 01-extract-the-domain",
+    practice: "agbar learn refactoring 01-extract-the-domain",
     title: "Single responsibility",
     category: "Design",
     failureScenario:
@@ -48,7 +48,7 @@ app.post("/orders", async (req, res) => {
 const total = priceOrder(req.body.items);   // domain: pure, testable alone
 await orders.save({ total });                // storage: behind an interface
 res.json({ total });                         // transport: only HTTP`,
-    practice: "buildquick learn refactoring 01-extract-the-domain",
+    practice: "agbar learn refactoring 01-extract-the-domain",
     title: "Separation of concerns",
     category: "Design",
     failureScenario:
@@ -65,7 +65,7 @@ class BloatedOrderService {
 // Group what changes together; the service keeps only what it truly uses
 class OrderService { constructor(orders, payments, notifier) {} }
 class InvoiceRenderer { constructor(pdf, tax) {} }`,
-    practice: "buildquick learn refactoring 01-extract-the-domain",
+    practice: "agbar learn refactoring 01-extract-the-domain",
     title: "Coupling and cohesion",
     category: "Design",
     failureScenario:

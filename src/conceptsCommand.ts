@@ -4,7 +4,7 @@ import { command, dim, heading, label, name, nextStep, path, tag } from "./ui/pa
 import { BACKEND_CONCEPTS, type Concept } from "./concepts/index.js";
 
 /**
- * Powers `buildquick concepts` - a standalone glossary command, independent of
+ * Powers `agbar concepts` - a standalone glossary command, independent of
  * scaffolding a project. The gap this closes: ARCHITECTURE.md/LEVELING-UP.md
  * only exist the moment a project gets generated, but the decisions they cover
  * (caching, rate limiting, idempotency, ...) come up constantly afterward, while
@@ -53,7 +53,7 @@ export function printConceptsList(): void {
   }
 
   console.log(`\n${heading("Concepts")} ${dim(`${BACKEND_CONCEPTS.length} across ${byCategory.size} topics - the stuff tutorials skip`)}`);
-  console.log(`${label("Quicker:")} search with one word - ${command("buildquick concepts money")}  ${command("buildquick concepts timeout")}\n`);
+  console.log(`${label("Quicker:")} search with one word - ${command("agbar concepts money")}  ${command("agbar concepts timeout")}\n`);
   for (const [category, items] of byCategory) {
     console.log(`${pc.bold(category)} ${dim(`(${items.length})`)}`);
     // The id is what you type to open it - so it's the coloured column, lined up.
@@ -63,14 +63,14 @@ export function printConceptsList(): void {
     }
     console.log("");
   }
-  console.log(nextStep("open one:", "buildquick concepts <id>"));
+  console.log(nextStep("open one:", "agbar concepts <id>"));
 }
 
 export function printConceptDetail(query: string): void {
   const result = lookupConcept(query);
 
   if (result.kind === "none") {
-    console.error(pc.red(`Nothing about '${query}' yet.`) + ` Try a different word, or ${command("buildquick concepts")} to browse everything.`);
+    console.error(pc.red(`Nothing about '${query}' yet.`) + ` Try a different word, or ${command("agbar concepts")} to browse everything.`);
     process.exitCode = 1;
     return;
   }
@@ -80,7 +80,7 @@ export function printConceptDetail(query: string): void {
   if (result.kind === "ambiguous") {
     console.log(`\n${heading(`${result.candidates.length} concepts about '${query}'`)}\n`);
     for (const c of result.candidates) {
-      console.log(`  ${name(c.title)} ${tag(`[${c.category}]`)}\n  ${command(`buildquick concepts ${c.id}`)}\n`);
+      console.log(`  ${name(c.title)} ${tag(`[${c.category}]`)}\n  ${command(`agbar concepts ${c.id}`)}\n`);
     }
     return;
   }
@@ -112,5 +112,5 @@ export function printConceptDetail(query: string): void {
   }
 
   // Every screen ends on one next step: practise it if a lesson exists, else keep browsing.
-  console.log(concept.practice ? nextStep("practise it:", concept.practice) : nextStep("browse more:", "buildquick concepts"));
+  console.log(concept.practice ? nextStep("practise it:", concept.practice) : nextStep("browse more:", "agbar concepts"));
 }

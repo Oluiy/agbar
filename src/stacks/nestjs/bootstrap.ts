@@ -4,7 +4,7 @@ import { writeFile } from "../../utils/fsWrite.js";
 import { isAvailable, runCommand } from "../../utils/runCommand.js";
 
 /**
- * Creates the project base with NestJS's own CLI, then lets buildquick overlay the
+ * Creates the project base with NestJS's own CLI, then lets agbar overlay the
  * parts the CLI does not do.
  *
  * Why delegate instead of writing every file: `nest new` is maintained by the Nest
@@ -12,7 +12,7 @@ import { isAvailable, runCommand } from "../../utils/runCommand.js";
  * dependency set they have already proven compatible. Hand-written version pins go
  * stale and conflict (this project hit TypeScript boxed between ts-jest's `<7` and
  * @nestjs/schematics' `>=6`, which only an install revealed). Letting the CLI
- * decide those versions removes that whole class of bug; buildquick then adds only
+ * decide those versions removes that whole class of bug; agbar then adds only
  * the packages the CLI does not know about.
  *
  * Returns false rather than throwing when the CLI cannot be used (offline, npx
@@ -36,7 +36,7 @@ export async function bootstrapWithNestCli(parentDir: string, projectName: strin
 }
 
 /**
- * The files `nest new` writes that buildquick replaces. Left in place they would be
+ * The files `nest new` writes that agbar replaces. Left in place they would be
  * duplicate, conflicting routes: the CLI's AppController serves GET / and its
  * AppModule declares providers this scaffold rewires into feature modules.
  */
@@ -56,10 +56,10 @@ export function removeCliDefaults(projectDir: string): void {
 }
 
 /**
- * Adds buildquick's extra dependencies and scripts to the CLI's package.json,
+ * Adds agbar's extra dependencies and scripts to the CLI's package.json,
  * keeping whatever versions the CLI chose for everything it already listed.
  *
- * That ordering is the point: the Nest team's own pins win, and buildquick only
+ * That ordering is the point: the Nest team's own pins win, and agbar only
  * fills gaps. An entry already present is never overwritten, so a future CLI that
  * ships @nestjs/config by default silently takes precedence over the pin here.
  */

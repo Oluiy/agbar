@@ -8,7 +8,7 @@ import { nodeChecker } from "./nodeChecker.js";
 
 let dir: string;
 beforeEach(() => {
-  dir = mkdtempSync(path.join(tmpdir(), "buildquick-traps-"));
+  dir = mkdtempSync(path.join(tmpdir(), "agbar-traps-"));
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 

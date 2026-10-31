@@ -19,7 +19,7 @@ export type { Concept } from "./types.js";
  * listed and rendered in, deliberately: design first, because structure is what
  * decides whether any of the rest can be changed later.
  *
- * Unlike the Decisions in explain.ts, these aren't tied to code buildquick
+ * Unlike the Decisions in explain.ts, these aren't tied to code agbar
  * generated - they're rendered into LEVELING-UP.md honestly framed as "not here
  * yet, but you'll need it."
  */

@@ -25,7 +25,7 @@ export async function generateSingleModuleSet(
   buildFilesProvided = false
 ): Promise<void> {
   const projectNameLower = projectName.toLowerCase();
-  const basePackage = `com.buildquick.${projectNameLower}`;
+  const basePackage = `com.agbar.${projectNameLower}`;
   const { dbProvider, includeJwt, includeDocker } = addons;
   const hasDb = dbProvider !== "none";
 
@@ -49,7 +49,7 @@ export async function generateSingleModuleSet(
     writeFile(path.join(outDir, ".gitignore"), gitignore());
   }
   const structureLabel = structure === "package-by-layer" ? "Package-by-Layer" : "Package-by-Feature";
-  writeFile(path.join(outDir, "README.md"), `# ${projectName}\n\nGenerated with \`buildquick\` (Spring Boot, ${structureLabel}).\n`);
+  writeFile(path.join(outDir, "README.md"), `# ${projectName}\n\nGenerated with \`agbar\` (Spring Boot, ${structureLabel}).\n`);
 
   if (includeDocker) {
     writeFile(path.join(outDir, "Dockerfile"), dockerfile());

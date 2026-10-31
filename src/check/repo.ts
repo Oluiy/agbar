@@ -146,7 +146,7 @@ const DATABASE_SIGNALS = new RegExp(
       "activerecord",
       // ORMs whose database is implicit: a Django project on SQLite lists no driver at
       // all (sqlite3 is in Python's stdlib), so without these every database rule was
-      // silently skipped - found by grading buildquick's own generated Django output.
+      // silently skipped - found by grading agbar's own generated Django output.
       "django",
       "peewee",
       "tortoise-orm",
@@ -240,13 +240,13 @@ export function scanRepo(root: string): RepoSnapshot {
 }
 
 /**
- * `{"kind": "cli"}` in the checked repo's `.buildquickrc` (the same JSON file
+ * `{"kind": "cli"}` in the checked repo's `.agbarrc` (the same JSON file
  * `learn` reads contentDir from). Fails loudly on a typo'd kind, like the rest of
  * the config: silently ignoring `"kind": "clii"` would run every rule anyway and
  * leave the user wondering why the setting does nothing.
  */
 function readProjectKind(root: string): ProjectKind | undefined {
-  const rcPath = path.join(root, ".buildquickrc");
+  const rcPath = path.join(root, ".agbarrc");
   if (!existsSync(rcPath)) return undefined;
   let kind: unknown;
   try {

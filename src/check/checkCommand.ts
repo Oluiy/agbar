@@ -71,8 +71,8 @@ export function printCheck(targetPath: string, opts: CheckOptions): void {
   console.log(opts.fixPlan ? renderFixPlan(report, opts.explain) : renderCheckReport(report, root, opts.explain));
 
   if (isUnrecognizedStack(repo, report)) {
-    console.log(pc.yellow("\nbuildquick didn't recognize this stack well enough to run its usual checks."));
-    console.log(pc.dim("Run 'buildquick check --report-gap' to send that as a gap report - no code leaves your machine unless you do."));
+    console.log(pc.yellow("\nagbar didn't recognize this stack well enough to run its usual checks."));
+    console.log(pc.dim("Run 'agbar check --report-gap' to send that as a gap report - no code leaves your machine unless you do."));
   }
 }
 

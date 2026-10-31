@@ -16,7 +16,7 @@ let out: string[];
 
 beforeEach(() => {
   realHome = process.env.HOME;
-  home = mkdtempSync(path.join(tmpdir(), "buildquick-ui-"));
+  home = mkdtempSync(path.join(tmpdir(), "agbar-ui-"));
   process.env.HOME = home; // progress files live under the home folder - keep the real one out of it
   out = [];
   vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => void out.push(args.join(" ")));
@@ -32,12 +32,12 @@ const text = () => out.join("\n").replace(/\x1b\[[0-9;]*m/g, "");
 
 describe("palette helpers", () => {
   it("shortens the home folder to ~, so a long temp path doesn't bury the file name", () => {
-    expect(shortPath(`${process.env.HOME}/.buildquick/learn/x/answer.txt`)).toBe("~/.buildquick/learn/x/answer.txt");
+    expect(shortPath(`${process.env.HOME}/.agbar/learn/x/answer.txt`)).toBe("~/.agbar/learn/x/answer.txt");
     expect(shortPath("/etc/hosts")).toBe("/etc/hosts");
   });
 
   it("a next step and a progress reading carry their meaning as plain text", () => {
-    expect(nextStep("open it:", "buildquick learn traps 1").replace(/\x1b\[[0-9;]*m/g, "")).toBe("Next: open it: buildquick learn traps 1");
+    expect(nextStep("open it:", "agbar learn traps 1").replace(/\x1b\[[0-9;]*m/g, "")).toBe("Next: open it: agbar learn traps 1");
     expect(progress(2, 5).replace(/\x1b\[[0-9;]*m/g, "")).toBe("2 of 5");
   });
 });
@@ -47,7 +47,7 @@ describe("learn screens", () => {
     printLearnLanguages();
     expect(text()).toMatch(new RegExp(`Courses\\s+${SUPPORTED_LEARN_LANGUAGES.length} courses`));
     expect(text()).toMatch(/traps\s+4 lessons · 0 of 4 done/);
-    expect(text()).toMatch(/Next: new here\? a guided path: buildquick tracks first-steps/);
+    expect(text()).toMatch(/Next: new here\? a guided path: agbar tracks first-steps/);
   });
 
   it("a lesson list shows status words (not just colour), minutes, and the next lesson to open", () => {
@@ -55,7 +55,7 @@ describe("learn screens", () => {
     expect(text()).toMatch(/0 of 4 lessons done/);
     expect(text()).toMatch(/○ not started\s+1\. Text Traps/);
     expect(text()).toMatch(/~20 min/);
-    expect(text()).toMatch(/Next: open lesson 1: buildquick learn traps 1/);
+    expect(text()).toMatch(/Next: open lesson 1: agbar learn traps 1/);
     expect(text()).not.toMatch(/\[core\]/); // every lesson is core here - the tag would be noise
   });
 
@@ -65,8 +65,8 @@ describe("learn screens", () => {
     expect(t).toMatch(/traps · lesson 2 of 4 · about \d+ min · 2 challenges/);
     for (const section of ["What to know", "Example", "Your turn"]) expect(t).toContain(section);
     expect(t).toMatch(/Challenge 1 of 2 · predict-numbers/);
-    expect(t).toMatch(/Edit\s+~\/\.buildquick\/learn\/traps\/02-number-traps\/predict-numbers\/answer\.txt/);
-    expect(t).toMatch(/Then\s+buildquick submit predict-numbers/);
+    expect(t).toMatch(/Edit\s+~\/\.agbar\/learn\/traps\/02-number-traps\/predict-numbers\/answer\.txt/);
+    expect(t).toMatch(/Then\s+agbar submit predict-numbers/);
   });
 });
 
@@ -75,7 +75,7 @@ describe("track screens", () => {
     printTracksList();
     expect(text()).toMatch(/First steps.*← start here/);
     expect(text()).toMatch(/0 of \d+ lessons done/);
-    expect(text()).toMatch(/buildquick tracks first-steps/);
+    expect(text()).toMatch(/agbar tracks first-steps/);
   });
 
   it("a track shows a progress line, aligned columns, 'you are here', and one next command", () => {
@@ -84,7 +84,7 @@ describe("track screens", () => {
     expect(t).toMatch(/Progress\s+░+\s+0 of \d+ lessons done/);
     expect(t).toMatch(/1\.\s+○ not started\s+YAML.*← you are here/);
     expect(t).toMatch(/·\s+read\s+Secrets management/);
-    expect(t).toMatch(/Next: buildquick learn yaml 1/);
+    expect(t).toMatch(/Next: agbar learn yaml 1/);
     // A step's command hangs directly under its title: the same column for lessons and reads.
     const lines = t.split("\n");
     const titleCol = lines.find((l) => l.includes("YAML:"))!.indexOf("YAML:");
@@ -101,17 +101,17 @@ describe("concept screens", () => {
     expect(t).toMatch(/Design \(6\)/);
     const lines = t.split("\n").filter((l) => /^ {2}\S.*\s{2}[a-z-]+$/.test(l));
     expect(lines.length).toBeGreaterThan(60);
-    expect(t).toMatch(/Next: open one: buildquick concepts <id>/);
+    expect(t).toMatch(/Next: open one: agbar concepts <id>/);
   });
 
   it("a concept has a heading per section and ends on one next step", () => {
     printConceptDetail("timeouts");
     const t = text();
     for (const section of ["Where this bites you", "The fix", "In code"]) expect(t).toContain(section);
-    expect(t).toMatch(/Next: browse more: buildquick concepts/);
+    expect(t).toMatch(/Next: browse more: agbar concepts/);
 
     out.length = 0;
     printConceptDetail("regex-anchoring");
-    expect(text()).toMatch(/Next: practise it: buildquick learn regex 01-anchors-and-escapes/);
+    expect(text()).toMatch(/Next: practise it: agbar learn regex 01-anchors-and-escapes/);
   });
 });

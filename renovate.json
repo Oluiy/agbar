@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Keeps buildquick's own dependencies AND the versions it writes into generated projects current. Every update is a PR; scaffold-verify.yml must pass before it merges.",
+  "description": "Keeps agbar's own dependencies AND the versions it writes into generated projects current. Every update is a PR; scaffold-verify.yml must pass before it merges.",
   "extends": ["config:recommended"],
   "schedule": ["before 6am on monday"],
   "timezone": "UTC",

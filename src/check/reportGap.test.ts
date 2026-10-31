@@ -9,7 +9,7 @@ import { buildGapReport, buildMailto, isUnrecognizedStack, writeGapReportFile } 
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = mkdtempSync(path.join(tmpdir(), "buildquick-gap-test-"));
+  tmpDir = mkdtempSync(path.join(tmpdir(), "agbar-gap-test-"));
 });
 
 afterEach(() => {

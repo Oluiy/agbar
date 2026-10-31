@@ -5,7 +5,7 @@ prerequisites: []
 core: true
 estimated_minutes: 25
 explanation: |
-  `buildquick concepts rate-limiting` tells you to cap how many requests a client
+  `agbar concepts rate-limiting` tells you to cap how many requests a client
   can make. This is the algorithm that actually does it, and it's the most widely
   deployed one because it separates two things every other approach conflates:
   the sustained rate you allow, and the burst you tolerate.
@@ -119,7 +119,7 @@ challenges:
       });
     hint: "elapsed = (now - this.lastRefill) / 1000; this.tokens = Math.min(this.capacity, this.tokens + elapsed * this.refillPerSecond); then set lastRefill = now before spending."
 project_tiein:
-  note: "If `buildquick check` flagged your repo for no rate limiting, this is the thing it was asking for."
+  note: "If `agbar check` flagged your repo for no rate limiting, this is the thing it was asking for."
 review_questions:
   - id: "never-exceed"
     question: "A client has been idle all night. What limit must its token count never exceed?"

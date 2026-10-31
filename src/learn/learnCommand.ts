@@ -19,7 +19,7 @@ import { nextStepAfterPass, pickChallenge, resolveLesson } from "./navigation.js
 const CHECKERS: Record<string, Checker> = {
   rust: rustChecker,
   // The systems algorithms behind the concepts - token bucket, LRU, consistent
-  // hashing - graded in JavaScript because buildquick already is Node, so they
+  // hashing - graded in JavaScript because agbar already is Node, so they
   // run for every user with no extra toolchain.
   algorithms: nodeChecker,
   // Structure, graded by behaviour: the tests can only pass if the code was
@@ -60,7 +60,7 @@ function requireLanguage(language: string): Checker | undefined {
   return checker;
 }
 
-/** Shown when `buildquick learn` is run with no language - a menu beats an error. */
+/** Shown when `agbar learn` is run with no language - a menu beats an error. */
 export function printLearnLanguages(): void {
   const blurbs: Record<string, string> = {
     algorithms: "Token bucket, backoff, LRU, consistent hashing - the algorithms behind the concepts",
@@ -86,10 +86,10 @@ export function printLearnLanguages(): void {
     console.log(`  ${name(language.padEnd(width))}  ${count(total)} ${dim("lessons")} ${dim("·")} ${progressOf(done, total)} ${dim("done")}`);
     if (blurbs[language]) console.log(`  ${" ".repeat(width)}  ${dim(blurbs[language])}`);
   }
-  console.log(`\n${label("Open a course:")} ${command("buildquick learn <course>")}   ${dim("e.g.")} ${command("buildquick learn traps")}`);
+  console.log(`\n${label("Open a course:")} ${command("agbar learn <course>")}   ${dim("e.g.")} ${command("agbar learn traps")}`);
   // Algorithms (token buckets, consistent hashing) is not where a beginner
   // starts; the beginner track is ordered so each step needs only the last one.
-  console.log(nextStep("new here? a guided path:", "buildquick tracks first-steps"));
+  console.log(nextStep("new here? a guided path:", "agbar tracks first-steps"));
 }
 
 export function printUnitList(language: string): void {
@@ -109,7 +109,7 @@ export function printUnitList(language: string): void {
   });
   const next = units.findIndex((u) => statusFor(progress, u.id) !== "done");
   console.log(
-    `\n${nextStep(next === -1 ? "all done - more to learn:" : "open lesson " + (next + 1) + ":", next === -1 ? "buildquick tracks" : `buildquick learn ${language} ${next + 1}`)}  ${dim("(a number, or any part of its name)")}`
+    `\n${nextStep(next === -1 ? "all done - more to learn:" : "open lesson " + (next + 1) + ":", next === -1 ? "agbar tracks" : `agbar learn ${language} ${next + 1}`)}  ${dim("(a number, or any part of its name)")}`
   );
 }
 
@@ -118,7 +118,7 @@ function findUnit(units: Unit[], query: string, language: string): Unit | undefi
   const unit = resolveLesson(units, query);
   if (!unit) {
     console.error(
-      pc.red(`No single lesson matches '${query}' in ${language}.`) + ` Run ${command(`buildquick learn ${language}`)} to see them, then use the number.`
+      pc.red(`No single lesson matches '${query}' in ${language}.`) + ` Run ${command(`agbar learn ${language}`)} to see them, then use the number.`
     );
     process.exitCode = 1;
   }
@@ -157,14 +157,14 @@ export function printUnitDetail(language: string, unitId: string): void {
     // The two lines a learner must act on - the file and the command - are the
     // brightest on the page, and the path is shortened to what matters.
     console.log(`\n  ${label("Edit")}   ${path(shortPath(checker.solutionPath(workspaceDir, challenge)))}`);
-    console.log(`  ${label("Then")}   ${command(`buildquick submit ${challenge.id}`)}`);
+    console.log(`  ${label("Then")}   ${command(`agbar submit ${challenge.id}`)}`);
     if (challenge.hint) console.log(dim("  (a hint appears if it fails - try it first)"));
   });
 
   if (unit.projectTieIn?.note) {
     console.log(`\n${heading("Why it matters")}\n\n${unit.projectTieIn.note}`);
   }
-  console.log(n > 1 ? `\n${dim("Plain")} ${command("buildquick submit")} ${dim("grades the first challenge you haven't passed.")}\n` : "");
+  console.log(n > 1 ? `\n${dim("Plain")} ${command("agbar submit")} ${dim("grades the first challenge you haven't passed.")}\n` : "");
 }
 
 /** Every pass ends on one concrete next step, so nobody has to remember the map. */
@@ -174,24 +174,22 @@ function printNextStep(language: string, units: Unit[], progress: ProgressMap, u
     const dir = ensureChallengeWorkspace(language, unit.id, next.challenge, checker);
     console.log(`\n${pc.bold(pc.green("Next:"))} the other challenge in this lesson, ${name(next.challenge.id)}`);
     console.log(`  ${label("Edit")}   ${path(shortPath(checker.solutionPath(dir, next.challenge)))}`);
-    console.log(`  ${label("Then")}   ${command("buildquick submit")}`);
+    console.log(`  ${label("Then")}   ${command("agbar submit")}`);
     return;
   }
-  console.log(`\n${good("Lesson complete.")} ${dim("Its recall questions start tomorrow in")} ${command("buildquick learn --review")}${dim(".")}`);
+  console.log(`\n${good("Lesson complete.")} ${dim("Its recall questions start tomorrow in")} ${command("agbar learn --review")}${dim(".")}`);
   if (next.kind === "lesson") {
-    console.log(nextStep(`${next.unit.title} -`, `buildquick learn ${language} ${units.indexOf(next.unit) + 1}`));
+    console.log(nextStep(`${next.unit.title} -`, `agbar learn ${language} ${units.indexOf(next.unit) + 1}`));
   } else {
-    console.log(`${good(`You've finished every ${language} lesson.`)} ${nextStep("more to learn:", "buildquick tracks")}`);
+    console.log(`${good(`You've finished every ${language} lesson.`)} ${nextStep("more to learn:", "agbar tracks")}`);
   }
 }
 
-/** `buildquick submit [challenge]`: grades the lesson you last opened, so nothing needs retyping. */
+/** `agbar submit [challenge]`: grades the lesson you last opened, so nothing needs retyping. */
 export async function submitLastOpened(challengeId?: string): Promise<void> {
   const last = loadLastOpened();
   if (!last) {
-    console.error(
-      pc.red("No lesson opened yet.") + ` Open one first, e.g. ${command("buildquick learn yaml 1")} - then ${command("buildquick submit")} grades it.`
-    );
+    console.error(pc.red("No lesson opened yet.") + ` Open one first, e.g. ${command("agbar learn yaml 1")} - then ${command("agbar submit")} grades it.`);
     process.exitCode = 1;
     return;
   }
@@ -230,7 +228,7 @@ export async function submitChallenge(language: string, unitId: string, challeng
   console.log(result.message);
   if (challenge.hint) console.log(`\n${attention("Hint:")} ${challenge.hint}`);
   // A failed try always ends on what to do: fix the file, run the same command.
-  console.log(`${dim("Edit, then run")} ${command("buildquick submit")} ${dim("again.")}`);
+  console.log(`${dim("Edit, then run")} ${command("agbar submit")} ${dim("again.")}`);
   process.exitCode = 1;
 }
 

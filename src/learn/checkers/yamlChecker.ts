@@ -8,7 +8,7 @@ import type { Challenge, CheckResult, Checker } from "../types.js";
 /**
  * Grades YAML - GitHub Actions workflows, cron schedules, config files - by what
  * the file *means* once parsed, never by how it's spelled. Runs in-process with
- * the `yaml` package buildquick already ships, so there is nothing to spawn and
+ * the `yaml` package agbar already ships, so there is nothing to spawn and
  * nothing to install.
  */
 

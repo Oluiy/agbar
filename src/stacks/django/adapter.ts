@@ -33,7 +33,7 @@ import type { DjangoAddons } from "./types.js";
 /**
  * Runs `django-admin startproject` when Django is already on PATH, so manage.py and
  * the wsgi/asgi entrypoints are the framework's own for whatever version the user
- * has. buildquick then overwrites settings.py and urls.py - the CLI's settings
+ * has. agbar then overwrites settings.py and urls.py - the CLI's settings
  * hardcode a SECRET_KEY and DEBUG=True, which is exactly what this scaffold exists
  * not to ship - so the delegation covers the stable boilerplate, not the policy.
  *

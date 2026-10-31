@@ -1,5 +1,5 @@
 /**
- * `buildquick check` grades an existing repo - code you may not have written, which
+ * `agbar check` grades an existing repo - code you may not have written, which
  * in 2026 is most of it - against the concepts in concepts.ts.
  *
  * Two rules this module holds itself to:
@@ -36,7 +36,7 @@ export interface RepoSnapshot {
   /** Dependency manifests concatenated, for "is this dependency present" checks. */
   manifests: string;
   hasDatabase: boolean;
-  /** From `"kind"` in the repo's `.buildquickrc`. Undefined = not declared; every rule runs. */
+  /** From `"kind"` in the repo's `.agbarrc`. Undefined = not declared; every rule runs. */
   kind?: ProjectKind;
   /** Folders ("" = root) whose package.json makes them a browser/mobile app with no server of its own (see manifests.ts). */
   frontendRoots?: string[];
@@ -77,7 +77,7 @@ export interface RuleDefinition {
   detect: (repo: RepoSnapshot) => DetectedFinding | undefined;
   /**
    * Only meaningful for a deployed network service (rate limits, health checks,
-   * pooling). Skipped when `.buildquickrc` declares the project a cli, library,
+   * pooling). Skipped when `.agbarrc` declares the project a cli, library,
    * or local-tool - a localhost dev UI doesn't need production advice.
    */
   serviceOnly?: boolean;
@@ -94,11 +94,11 @@ export interface CheckReport {
   findings: Finding[];
   passed: string[];
   skipped: string[];
-  /** Service-only rules skipped because `.buildquickrc` says this isn't a service. Subset of `skipped`. */
+  /** Service-only rules skipped because `.agbarrc` says this isn't a service. Subset of `skipped`. */
   skippedForKind?: string[];
   /** The declared project kind, echoed so the report can explain what it skipped. */
   kind?: ProjectKind;
-  /** Findings hidden by a buildquick-ignore comment - always shown as a count, since a suppression can hide a real problem. */
+  /** Findings hidden by a agbar-ignore comment - always shown as a count, since a suppression can hide a real problem. */
   suppressed?: { ruleId: string; evidence?: string }[];
   /** Suppression comments naming a rule that doesn't exist ("'x' at path:line") - they silence nothing. */
   unknownSuppressions?: string[];
