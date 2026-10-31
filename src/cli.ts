@@ -107,6 +107,14 @@ program
     if (shouldShowWelcome(projectNameArg, opts) && !(await runWelcome())) return;
 
     const nonInteractive = Boolean(opts.yes || opts.config);
+    // The questions need a terminal. Without one (CI, a pipe, a script) the prompt library
+    // dies with a raw libuv error, so say what to do instead.
+    if (!nonInteractive && (!process.stdin.isTTY || !process.stdout.isTTY)) {
+      console.error(pc.red("agbar needs an interactive terminal to ask its questions."));
+      console.error(pc.dim("In a script, pass everything up front: agbar <ProjectName> --yes --stack <id>   (agbar --help lists the options)"));
+      process.exitCode = 1;
+      return;
+    }
     try {
       const { config, adapter } = nonInteractive ? resolveNonInteractive(stacks, opts, projectNameArg) : await runPrompts(stacks, projectNameArg);
 

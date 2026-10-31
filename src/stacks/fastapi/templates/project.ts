@@ -178,7 +178,7 @@ fresh clone with nothing installed or running besides the dependencies.
 ## Grade it
 
 \`\`\`bash
-agbar check        # the same checker that generated this project
+agbar check        # grade this project; each finding links to a lesson
 \`\`\`
 `;
 }
