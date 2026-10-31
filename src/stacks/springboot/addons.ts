@@ -11,7 +11,7 @@ import type { ProjectStructure, SpringBootAddons } from "./types.js";
  */
 
 export async function promptSpringBootAddons(): Promise<Record<string, unknown>> {
-  const structure = checkCancel(
+  const structure = checkCancel<ProjectStructure>(
     await select({
       message: "Project Structure:",
       options: [
@@ -20,7 +20,7 @@ export async function promptSpringBootAddons(): Promise<Record<string, unknown>>
         { value: "package-by-feature", label: "Package-by-Feature (single module, organized by domain concept)" },
       ],
     })
-  ) as ProjectStructure;
+  );
 
   let isFourLayer = false;
   if (structure === "multi-module") {
@@ -36,7 +36,7 @@ export async function promptSpringBootAddons(): Promise<Record<string, unknown>>
     isFourLayer = archChoice === "4-layer";
   }
 
-  const dbProvider = checkCancel(
+  const dbProvider = checkCancel<DbProvider>(
     await select({
       message: "Add a database (Spring Data JPA)?",
       options: [
@@ -45,7 +45,7 @@ export async function promptSpringBootAddons(): Promise<Record<string, unknown>>
         { value: "mysql", label: "MySQL" },
       ],
     })
-  ) as DbProvider;
+  );
 
   const includeJwt = checkCancel(await confirm({ message: "Add JWT Authentication boilerplate?", initialValue: false }));
   const includeDocker = checkCancel(await confirm({ message: "Add Dockerfile & docker-compose.yml?", initialValue: false }));

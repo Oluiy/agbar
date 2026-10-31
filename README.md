@@ -5,7 +5,7 @@
 `agbar check` grades a backend repo for the problems that break in production - leaked secrets, missing timeouts, N+1 queries, no rate limiting - and links every finding to a short lesson. `check` and the lessons run entirely on your machine: no AI, no network, no telemetry. (Scaffolding is the exception - it downloads through your package manager and Spring Initializr.)
 
 ```bash
-npm install -g agbar
+npm install -g @oluiy/agbar
 cd your-project
 agbar check
 ```

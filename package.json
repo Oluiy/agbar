@@ -1,10 +1,10 @@
 {
-  "name": "agbar",
+  "name": "@oluiy/agbar",
   "version": "0.1.0",
-  "description": "Grades an existing codebase, and practise the engineering concepts behind both - with real pass/fail checks, not quizzes, also scaffold a backend project.",
+  "description": "Grade your backend code, learn why each finding matters, and scaffold new projects - with real pass/fail checks, not quizzes.",
   "type": "module",
   "bin": {
-    "agbar": "./dist/cli.js"
+    "agbar": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -28,7 +28,7 @@
   "author": "Iyanuoluwa Akinboyewa (Oluiy)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Oluiy/agbar"
+    "url": "git+https://github.com/Oluiy/agbar.git"
   },
   "homepage": "https://github.com/Oluiy/agbar#readme",
   "bugs": {

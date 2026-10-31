@@ -79,7 +79,7 @@ describe("node adapters - relative imports resolve to generated files", () => {
       for (const file of [...files].filter((f) => f.endsWith(".ts"))) {
         for (const match of read(outDir, file).matchAll(/from "(\.[^"]+)"/g)) {
           expect(match[1], `${file} imports "${match[1]}" without a .js extension`).toMatch(/\.js$/);
-          const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), match[1]!.replace(/\.js$/, ".ts")));
+          const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), match[1].replace(/\.js$/, ".ts")));
           // src/generated is written by `prisma generate` at install time, not by this adapter.
           if (target.startsWith("src/generated/")) continue;
           expect(files.has(target), `${file} imports "${match[1]}" (-> ${target}), which was never generated`).toBe(true);
@@ -253,7 +253,7 @@ describe("node adapters - Dockerfile (not built here: Docker was not running)", 
     expect(builder).toContain('ENV DATABASE_URL="file:./build-only.db"');
     // Builder only: the runtime image must still require a real one. Instructions only -
     // a comment there says "DATABASE_URL must be provided", so it names the variable.
-    const runtimeInstructions = runtime!
+    const runtimeInstructions = runtime
       .split("\n")
       .filter((l) => !l.trim().startsWith("#"))
       .join("\n");

@@ -8,7 +8,7 @@ import { FASTAPI_DBS, FASTAPI_STRUCTURES, type FastApiAddons, type FastApiDb, ty
  */
 
 export async function promptFastApiAddons(): Promise<Record<string, unknown>> {
-  const structure = checkCancel(
+  const structure = checkCancel<FastApiStructure>(
     await select({
       message: "Project structure:",
       options: [
@@ -17,9 +17,9 @@ export async function promptFastApiAddons(): Promise<Record<string, unknown>> {
         { value: "clean", label: "Clean / hexagonal (domain, application, infrastructure)" },
       ],
     })
-  ) as FastApiStructure;
+  );
 
-  const db = checkCancel(
+  const db = checkCancel<FastApiDb>(
     await select({
       message: "Database (SQLAlchemy 2.x + Alembic):",
       options: [
@@ -28,7 +28,7 @@ export async function promptFastApiAddons(): Promise<Record<string, unknown>> {
         { value: "none", label: "None (routes only)" },
       ],
     })
-  ) as FastApiDb;
+  );
 
   const includeDocker = checkCancel(await confirm({ message: "Add Dockerfile & docker-compose.yml?", initialValue: db === "postgres" }));
   const install = checkCancel(await confirm({ message: "Install dependencies and run the tests now? (takes minutes)", initialValue: false }));

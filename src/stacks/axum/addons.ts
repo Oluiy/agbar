@@ -3,7 +3,7 @@ import { checkCancel } from "../../utils/prompts.js";
 import { AXUM_DBS, AXUM_STRUCTURES, type AxumAddons, type AxumDb, type AxumStructure } from "./types.js";
 
 export async function promptAxumAddons(): Promise<Record<string, unknown>> {
-  const structure = checkCancel(
+  const structure = checkCancel<AxumStructure>(
     await select({
       message: "Project structure:",
       options: [
@@ -11,9 +11,9 @@ export async function promptAxumAddons(): Promise<Record<string, unknown>> {
         { value: "clean", label: "Clean / hexagonal (domain, application, infrastructure, api)" },
       ],
     })
-  ) as AxumStructure;
+  );
 
-  const db = checkCancel(
+  const db = checkCancel<AxumDb>(
     await select({
       message: "Database (sqlx):",
       options: [
@@ -21,7 +21,7 @@ export async function promptAxumAddons(): Promise<Record<string, unknown>> {
         { value: "postgres", label: "PostgreSQL (docker-compose provided)" },
       ],
     })
-  ) as AxumDb;
+  );
 
   const includeDocker = checkCancel(await confirm({ message: "Add Dockerfile & docker-compose.yml?", initialValue: db === "postgres" }));
   const useCli = checkCancel(

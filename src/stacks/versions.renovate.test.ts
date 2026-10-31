@@ -88,7 +88,7 @@ describe("held-back majors in renovate.json", () => {
     expect(held.get(pkg)).toBe(rule);
     const pinnedMajorMinor = pin.replace(/^\^/, "").split(".").map(Number);
     const limit = rule.replace(/^</, "").split(".").map(Number);
-    const below = pinnedMajorMinor[0]! < limit[0]! || (pinnedMajorMinor[0] === limit[0] && (pinnedMajorMinor[1] ?? 0) < (limit[1] ?? 0));
+    const below = pinnedMajorMinor[0] < limit[0] || (pinnedMajorMinor[0] === limit[0] && (pinnedMajorMinor[1] ?? 0) < (limit[1] ?? 0));
     expect(below, `${pkg} ${pin} must be below ${rule}`).toBe(true);
   });
 });

@@ -3,7 +3,7 @@ import { checkCancel } from "../../utils/prompts.js";
 import { DJANGO_DBS, DJANGO_STRUCTURES, type DjangoAddons, type DjangoDb, type DjangoStructure } from "./types.js";
 
 export async function promptDjangoAddons(): Promise<Record<string, unknown>> {
-  const structure = checkCancel(
+  const structure = checkCancel<DjangoStructure>(
     await select({
       message: "Project structure:",
       options: [
@@ -11,9 +11,9 @@ export async function promptDjangoAddons(): Promise<Record<string, unknown>> {
         { value: "service-layer", label: "Service layer (services.py for writes, selectors.py for reads)" },
       ],
     })
-  ) as DjangoStructure;
+  );
 
-  const db = checkCancel(
+  const db = checkCancel<DjangoDb>(
     await select({
       message: "Database:",
       options: [
@@ -21,7 +21,7 @@ export async function promptDjangoAddons(): Promise<Record<string, unknown>> {
         { value: "postgres", label: "PostgreSQL (psycopg; docker-compose provided)" },
       ],
     })
-  ) as DjangoDb;
+  );
 
   const includeDocker = checkCancel(await confirm({ message: "Add Dockerfile & docker-compose.yml?", initialValue: db === "postgres" }));
   const useCli = checkCancel(await confirm({ message: "Use django-admin startproject for the base (when Django is installed)?", initialValue: true }));

@@ -79,7 +79,7 @@ describe("every ORM generates the same project shape behind one Database interfa
     for (const file of [...files].filter((f) => f.endsWith(".ts"))) {
       for (const match of read(outDir, file).matchAll(/from "(\.[^"]+)"/g)) {
         expect(match[1], `${file} imports "${match[1]}" without a .js extension`).toMatch(/\.js$/);
-        const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), match[1]!.replace(/\.js$/, ".ts")));
+        const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), match[1].replace(/\.js$/, ".ts")));
         if (target.startsWith("src/generated/")) continue; // written by `prisma generate`
         expect(files.has(target), `${file} imports "${match[1]}" (-> ${target}), which was never generated`).toBe(true);
       }

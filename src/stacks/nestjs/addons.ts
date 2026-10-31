@@ -3,7 +3,7 @@ import { checkCancel } from "../../utils/prompts.js";
 import { NEST_DBS, NEST_ORMS, NEST_ORMS_IMPLEMENTED, NEST_STRUCTURES, type NestAddons, type NestDb, type NestOrm, type NestStructure } from "./types.js";
 
 export async function promptNestAddons(): Promise<Record<string, unknown>> {
-  const structure = checkCancel(
+  const structure = checkCancel<NestStructure>(
     await select({
       message: "Project structure:",
       options: [
@@ -11,9 +11,9 @@ export async function promptNestAddons(): Promise<Record<string, unknown>> {
         { value: "clean", label: "Clean / hexagonal (domain, application, infrastructure per feature)" },
       ],
     })
-  ) as NestStructure;
+  );
 
-  const orm = checkCancel(
+  const orm = checkCancel<NestOrm>(
     await select({
       message: "ORM:",
       options: [
@@ -21,12 +21,12 @@ export async function promptNestAddons(): Promise<Record<string, unknown>> {
         { value: "none", label: "None (routes only)" },
       ],
     })
-  ) as NestOrm;
+  );
 
   const db =
     orm === "none"
       ? "sqlite"
-      : (checkCancel(
+      : checkCancel<NestDb>(
           await select({
             message: "Database:",
             options: [
@@ -34,7 +34,7 @@ export async function promptNestAddons(): Promise<Record<string, unknown>> {
               { value: "postgres", label: "PostgreSQL (docker-compose provided)" },
             ],
           })
-        ) as NestDb);
+        );
 
   const includeDocker = checkCancel(await confirm({ message: "Add Dockerfile & docker-compose.yml?", initialValue: db === "postgres" }));
   const useCli = checkCancel(

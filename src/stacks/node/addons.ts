@@ -4,7 +4,7 @@ import { implementedOrms, ormMenuOptions } from "./orms/index.js";
 import { NODE_DBS, NODE_ORMS, NODE_STRUCTURES, type NodeAddons, type NodeDb, type NodeFramework, type NodeOrm, type NodeStructure } from "./types.js";
 
 export async function promptNodeAddons(): Promise<Record<string, unknown>> {
-  const structure = checkCancel(
+  const structure = checkCancel<NodeStructure>(
     await select({
       message: "Project structure:",
       options: [
@@ -12,20 +12,20 @@ export async function promptNodeAddons(): Promise<Record<string, unknown>> {
         { value: "clean", label: "Clean / hexagonal (domain, application, infrastructure, api)" },
       ],
     })
-  ) as NodeStructure;
+  );
 
-  const orm = checkCancel(
+  const orm = checkCancel<NodeOrm>(
     await select({
       message: "ORM:",
       // Built from the plug-in registry, so a new ORM appears here the moment it exists.
       options: ormMenuOptions(),
     })
-  ) as NodeOrm;
+  );
 
   const db =
     orm === "none"
       ? "sqlite"
-      : (checkCancel(
+      : checkCancel<NodeDb>(
           await select({
             message: "Database:",
             options: [
@@ -33,7 +33,7 @@ export async function promptNodeAddons(): Promise<Record<string, unknown>> {
               { value: "postgres", label: "PostgreSQL (docker-compose provided)" },
             ],
           })
-        ) as NodeDb);
+        );
 
   const includeDocker = checkCancel(await confirm({ message: "Add Dockerfile & docker-compose.yml?", initialValue: db === "postgres" && orm !== "none" }));
   const install = checkCancel(await confirm({ message: "Run npm install and the tests now? (takes minutes)", initialValue: false }));

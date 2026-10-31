@@ -78,7 +78,7 @@ jobs:
       - run: npm run build
 
       # ...then run the artifact on the oldest Node `engines` promises, with production
-      # dependencies only - exactly what `npm install -g agbar` gives a user. If this
+      # dependencies only - exactly what `npm install -g @oluiy/agbar` gives a user. If this
       # fails, `engines` is a false promise and must be raised, not worked around.
       - uses: actions/setup-node@v4
         with:

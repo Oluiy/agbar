@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadUnits } from "../loader.js";
-import type { Challenge } from "../types.js";
 import { nodeChecker } from "./nodeChecker.js";
 import { predictionChecker } from "./predictionChecker.js";
 
@@ -56,7 +55,7 @@ describe("reading content stays true", () => {
 });
 
 describe("predictionChecker", () => {
-  const c = predictions[0] as Challenge;
+  const c = predictions[0];
   const answer = (text: string) => writeFileSync(predictionChecker.solutionPath(dir, c), text);
 
   it("scaffolds the program to read and an answer file with instructions", () => {
