@@ -133,7 +133,7 @@ SQLite, so there is nothing to start. Apply migrations with \`alembic upgrade he
 
   return `# ${projectName}
 
-A FastAPI service generated with [agbar](https://github.com/Oluiy/aggregator)
+A FastAPI service generated with [agbar](https://github.com/Oluiy/agbar)
 using the **${structure}** structure. See [ARCHITECTURE.md](ARCHITECTURE.md) for why it
 is shaped this way.
 

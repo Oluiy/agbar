@@ -333,7 +333,7 @@ npm run db:migrate -- --name init
 
   return `# ${projectName}
 
-A NestJS service generated with [agbar](https://github.com/Oluiy/aggregator),
+A NestJS service generated with [agbar](https://github.com/Oluiy/agbar),
 using the **${structure}** structure${orm === "none" ? "" : ` and **${orm}**`}. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for why it is shaped this way.
 

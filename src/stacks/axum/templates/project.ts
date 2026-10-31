@@ -132,7 +132,7 @@ volumes:
 export function readmeMd(projectName: string, structure: AxumStructure, db: AxumDb): string {
   return `# ${projectName}
 
-An Axum service generated with [agbar](https://github.com/Oluiy/aggregator), using the
+An Axum service generated with [agbar](https://github.com/Oluiy/agbar), using the
 **${structure}** structure and **sqlx** on **${db === "sqlite" ? "SQLite" : "PostgreSQL"}**. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for why it is shaped this way.
 

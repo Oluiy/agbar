@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please **do not open a public issue** for a security problem. Report it privately via
-GitHub: <https://github.com/Oluiy/aggregator/security/advisories/new>
+GitHub: <https://github.com/Oluiy/agbar/security/advisories/new>
 
 Include what you found, how to reproduce it, and the impact. You'll get an acknowledgement
 and a fix or a decision as soon as I can manage - this is a one-maintainer project, so

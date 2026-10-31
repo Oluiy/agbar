@@ -7,8 +7,8 @@ a checker that cries wolf gets uninstalled.
 ## Set up
 
 ```bash
-git clone https://github.com/Oluiy/aggregator
-cd aggregator
+git clone https://github.com/Oluiy/agbar
+cd agbar
 npm install
 npm run dev -- check path/to/a/repo   # run from source
 npm run verify                        # typecheck, lint, format, tests - the same gate CI runs

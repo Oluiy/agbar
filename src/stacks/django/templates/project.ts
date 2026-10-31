@@ -145,7 +145,7 @@ volumes:
 export function readmeMd(projectName: string, structure: DjangoStructure, db: DjangoDb): string {
   return `# ${projectName}
 
-A Django REST service generated with [agbar](https://github.com/Oluiy/aggregator),
+A Django REST service generated with [agbar](https://github.com/Oluiy/agbar),
 using the **${structure}** structure. See [ARCHITECTURE.md](ARCHITECTURE.md) for why it
 is shaped this way.
 

@@ -263,7 +263,7 @@ export function readmeMd(projectName: string, framework: NodeFramework, structur
   const plugin = ormPlugin(orm);
   return `# ${projectName}
 
-A ${label} service in TypeScript, generated with [agbar](https://github.com/Oluiy/aggregator),
+A ${label} service in TypeScript, generated with [agbar](https://github.com/Oluiy/agbar),
 using the **${structure}** structure${plugin ? ` and **${plugin.label}** on **${db === "sqlite" ? "SQLite" : "PostgreSQL"}**` : ""}. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for why it is shaped this way.
 
