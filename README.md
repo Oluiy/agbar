@@ -2,7 +2,7 @@
 
 **Could you defend this code in a review? Find out in one command - and learn why.**
 
-`agbar check` grades a backend repo for the problems that break in production - leaked secrets, missing timeouts, N+1 queries, no rate limiting - and links every finding to a short lesson. Runs locally: no AI, no network, no telemetry.
+`agbar check` grades a backend repo for the problems that break in production - leaked secrets, missing timeouts, N+1 queries, no rate limiting - and links every finding to a short lesson. `check` and the lessons run entirely on your machine: no AI, no network, no telemetry. (Scaffolding is the exception - it downloads through your package manager and Spring Initializr.)
 
 ```bash
 npm install -g agbar
@@ -11,12 +11,19 @@ agbar check
 ```
 
 ```text
-8/11 checks passed  (4 not applicable)
+11/15 checks passed  (4 not applicable)
+4 medium
 
-1.  MEDIUM  A query fetches every row with no limit. Fine at 200 rows, a timeout at 2 million.
-        where: src/app.js:7  const rows = await pool.query("SELECT * FROM articles");
-        Next: Add a LIMIT/cursor and a default page size in the handler.
+Will this survive traffic?
+
+...
+
+3.  MEDIUM  A query fetches every row with no limit. Fine at 200 rows, a timeout at 2 million.
+        where: src/app.js:6  const rows = await pool.query("SELECT * FROM articles");
+        Next: Add a LIMIT/cursor to the query flagged above and a default page size in the handler - don't wait for the table to grow to find out where the response times out.
         Learn why: agbar concepts pagination
+
+...
 ```
 
 Every finding gives you a severity, the exact file and line, the fix, and the command to learn why it matters. Works on .NET, Go, Rust, TypeScript, JavaScript, Java and Python projects.

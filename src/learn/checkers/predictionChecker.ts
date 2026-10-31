@@ -5,9 +5,8 @@ import type { Challenge, CheckResult, Checker } from "../types.js";
 
 /**
  * "Predict what this prints": the learner reads program.js and writes the output
- * they expect into answer.txt - without running it. Grades reading, the skill AI
- * assistance erodes most (Anthropic's 2026 study: the biggest gap was debugging,
- * i.e. knowing what code actually does).
+ * they expect into answer.txt - without running it. Grades reading: knowing what
+ * code actually does, which matters most when someone or something else wrote it.
  *
  * The expected output is never shown on failure - only which line first differs.
  * Showing it would turn a reading exercise into a copying one. Content accuracy

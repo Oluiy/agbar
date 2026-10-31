@@ -12,13 +12,13 @@ handler-touches-database
 hardcoded-db-credentials
   default   Move the credential out to an environment variable and build the connection string from it at runtime. A URL that's easy to construct is also easy to leak, since it travels with the source instead of the environment.
 http-without-timeout
-  default   Pass an explicit timeout on the call flagged below (AbortSignal.timeout() in JS, http.Client{Timeout: ...} in Go, timeout= in Python requests) - a default of 'wait forever' is the actual bug.
+  default   Pass an explicit timeout on the call flagged above (AbortSignal.timeout() in JS, http.Client{Timeout: ...} in Go, timeout= in Python requests) - a default of 'wait forever' is the actual bug.
   dotnet    Set a deadline on the call: HttpClient.Timeout (default 100s is usually far too long), or pass a CancellationToken from a CancellationTokenSource with a timeout.
   go        Don't use http.Get or the default client: build one with a deadline - &http.Client{Timeout: 5 * time.Second} - or pass a context from context.WithTimeout to http.NewRequestWithContext.
   java      Set both timeouts: HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)) for connecting, and .timeout(...) on the HttpRequest for the response. RestTemplate needs a ClientHttpRequestFactory with both.
-  node      Pass an explicit timeout on the call flagged below: fetch(url, { signal: AbortSignal.timeout(3000) }), or axios's timeout option - a default of 'wait forever' is the actual bug.
+  node      Pass an explicit timeout on the call flagged above: fetch(url, { signal: AbortSignal.timeout(3000) }), or axios's timeout option - a default of 'wait forever' is the actual bug.
   php       Pass Guzzle's 'timeout' and 'connect_timeout' options on the request (or in the client's defaults) - cURL's default is to wait indefinitely for the response.
-  python    Pass a timeout on the call flagged below: requests.get(url, timeout=(3, 10)) (connect, read) or httpx.Client(timeout=5) - requests has no default timeout at all.
+  python    Pass a timeout on the call flagged above: requests.get(url, timeout=(3, 10)) (connect, read) or httpx.Client(timeout=5) - requests has no default timeout at all.
   ruby      Set both timeouts on the client: Net::HTTP's open_timeout and read_timeout, or Faraday's request: { timeout: 5, open_timeout: 3 } - neither defaults to anything useful.
   rust      Set a timeout when you build the client: reqwest::Client::builder().timeout(Duration::from_secs(5)).build()?, and reuse that client - a per-request tokio::time::timeout also works.
 in-memory-session-store
@@ -78,5 +78,5 @@ swallowed-error
 too-many-dependencies
   default   Group the constructor's dependencies by which feature they serve. Each group that only ever gets used together is a class trying to split itself out - move it into its own collaborator and inject that instead.
 unbounded-list-query
-  default   Add a LIMIT/cursor to the query flagged below and a default page size in the handler - don't wait for the table to grow to find out where the response times out."
+  default   Add a LIMIT/cursor to the query flagged above and a default page size in the handler - don't wait for the table to grow to find out where the response times out."
 `;

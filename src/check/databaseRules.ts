@@ -86,7 +86,7 @@ export const DATABASE_RULES: RuleDefinition[] = [
     severity: "medium",
     passSummary: "No obviously unbounded list queries",
     nextStep:
-      "Add a LIMIT/cursor to the query flagged below and a default page size in the handler - don't wait for the table to grow to find out where the response times out.",
+      "Add a LIMIT/cursor to the query flagged above and a default page size in the handler - don't wait for the table to grow to find out where the response times out.",
     appliesTo: (repo) => repo.hasDatabase,
     detect: (full) => {
       // One-off data loaders - seeders, migrations, backfills, fixtures - read small

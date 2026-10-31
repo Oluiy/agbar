@@ -30,6 +30,10 @@
     "type": "git",
     "url": "https://github.com/Oluiy/agbar"
   },
+  "homepage": "https://github.com/Oluiy/agbar#readme",
+  "bugs": {
+    "url": "https://github.com/Oluiy/agbar/issues"
+  },
   "keywords": [
     "cli",
     "scaffolding",
@@ -41,6 +45,10 @@
     "learning",
     "system-design",
     "code-quality",
+    "static-analysis",
+    "code-review",
+    "security",
+    "owasp",
     "best-practices",
     "developer-education"
   ],

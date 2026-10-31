@@ -205,7 +205,7 @@ export const OPERATIONAL_RULES: RuleDefinition[] = [
     severity: "medium",
     passSummary: "Outbound HTTP calls set timeouts",
     nextStep:
-      "Pass an explicit timeout on the call flagged below (AbortSignal.timeout() in JS, http.Client{Timeout: ...} in Go, timeout= in Python requests) - a default of 'wait forever' is the actual bug.",
+      "Pass an explicit timeout on the call flagged above (AbortSignal.timeout() in JS, http.Client{Timeout: ...} in Go, timeout= in Python requests) - a default of 'wait forever' is the actual bug.",
     appliesTo: (repo) => anyServerCodeMatches(repo, OUTBOUND_CALL),
     detect: (repo) => {
       // Bug found auditing the whole rule set: this used to check "does the word

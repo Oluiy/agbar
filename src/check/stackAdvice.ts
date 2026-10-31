@@ -76,9 +76,9 @@ export const STACK_ADVICE: Record<string, Partial<Record<Language, string>>> = {
     php: "Add a rate limiter at the framework level: Laravel's throttle middleware on the route group, or symfony/rate-limiter in a listener.",
   },
   "http-without-timeout": {
-    node: "Pass an explicit timeout on the call flagged below: fetch(url, { signal: AbortSignal.timeout(3000) }), or axios's timeout option - a default of 'wait forever' is the actual bug.",
+    node: "Pass an explicit timeout on the call flagged above: fetch(url, { signal: AbortSignal.timeout(3000) }), or axios's timeout option - a default of 'wait forever' is the actual bug.",
     python:
-      "Pass a timeout on the call flagged below: requests.get(url, timeout=(3, 10)) (connect, read) or httpx.Client(timeout=5) - requests has no default timeout at all.",
+      "Pass a timeout on the call flagged above: requests.get(url, timeout=(3, 10)) (connect, read) or httpx.Client(timeout=5) - requests has no default timeout at all.",
     go: "Don't use http.Get or the default client: build one with a deadline - &http.Client{Timeout: 5 * time.Second} - or pass a context from context.WithTimeout to http.NewRequestWithContext.",
     rust: "Set a timeout when you build the client: reqwest::Client::builder().timeout(Duration::from_secs(5)).build()?, and reuse that client - a per-request tokio::time::timeout also works.",
     java: "Set both timeouts: HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)) for connecting, and .timeout(...) on the HttpRequest for the response. RestTemplate needs a ClientHttpRequestFactory with both.",
