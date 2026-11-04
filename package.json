@@ -1,6 +1,6 @@
 {
   "name": "@oluiy/agbar",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Grade your backend code, learn why each finding matters, and scaffold new projects - with real pass/fail checks, not quizzes.",
   "type": "module",
   "bin": {
